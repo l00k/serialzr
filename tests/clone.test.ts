@@ -71,4 +71,18 @@ prepareSerializerContext('Clone', () => {
         expect(clone.items !== source.items).to.be.eq(true);
         expect(clone.items[0] !== source.items[0]).to.be.eq(true);
     });
+    
+    it ('should clone all data for unknown types', () => {
+        class Foo {
+            public bar = 3;
+            public baz = 'test';
+        }
+        
+        const source = new Foo();
+        source.bar = 4;
+        source.baz = 'sample';
+        
+        const clone = serializer.clone(source);
+        expect(clone).to.eql(source);
+    });
 });

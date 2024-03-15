@@ -691,10 +691,14 @@ export class Serializer
             return source;
         }
         
-        const plain = this.toPlain(source, options);
+        const plain = this.toPlain(source, {
+            strategy: Strategy.Expose,
+            ...options
+        });
         
         return this.toClass(plain, {
             type,
+            strategy: Strategy.Expose,
             ...options,
         });
     }
