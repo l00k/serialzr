@@ -1,0 +1,17 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "plugins": [
+            { "transform": "typescript-transform-paths" },
+            { "transform": "typescript-transform-paths", "afterDeclarations": true }
+        ],
+        
+        "ignoreDeprecations": "5.0",
+        
+        "declaration": true
+    },
+    "include": [
+        "./src",
+        "./playground"
+    ]
+}

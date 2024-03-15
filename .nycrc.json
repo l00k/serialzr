@@ -1,0 +1,9 @@
+{
+    "extensions": [
+        "ts", "tsx"
+    ],
+    "reporter": [
+        "text-summary",
+        "html"
+    ]
+}

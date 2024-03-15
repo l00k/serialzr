@@ -1,0 +1,48 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "extends": "@tsconfig/node18/tsconfig.json",
+    "compilerOptions": {
+        "target": "esnext",
+        "module": "nodenext",
+        "moduleResolution": "nodenext",
+        "lib": [
+            "esnext"
+        ],
+
+        "esModuleInterop": true,
+
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": false,
+
+        "strict": true,
+        "noImplicitAny": false,
+        "noImplicitThis": true,
+        "noImplicitReturns": true,
+        "strictNullChecks": false,
+        "strictPropertyInitialization": false,
+        
+        "importsNotUsedAsValues": "error",
+        "verbatimModuleSyntax": true,
+        "isolatedModules": true,
+
+        "baseUrl": ".",
+        "paths": {
+            "$/*": ["./src/*"],
+            "#/*": ["./tests/*"]
+        },
+
+        "typeRoots": [
+            "./node_modules/@types",
+            "./src/types/*.d.ts"
+        ],
+
+        "sourceMap": true,
+        "removeComments": false,
+
+        "outDir": "dist"
+    },
+    "include": [
+        "./src/**/*.ts",
+        "./tests/**/*.ts"
+    ]
+}
