@@ -165,9 +165,12 @@ prepareSerializerContext('To Plain / Expose', () => {
         
         const plain = serializer.toPlain(object, { depth: 2 });
         
-        expect(plain).to.eql({
+        expect(plain).to.deep.equal({
             id: 2,
-            child: {},
+            child: {
+                id: 2,
+                child: {}
+            },
         });
     });
     

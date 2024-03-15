@@ -128,12 +128,12 @@ export class Serializer
     ) : any
     {
         // check depth limit
-        if (
-            options.depth !== undefined
-            && context.depth >= options.depth
-        ) {
-            return undefined;
-        }
+        // if (
+        //     options.depth !== undefined
+        //     && context.depth > options.depth
+        // ) {
+        //     return undefined;
+        // }
         
         // detect type
         const chainClasses = getClassesFromChain(source?.constructor);
@@ -232,15 +232,6 @@ export class Serializer
         // build plain object
         let plain : any = {};
         
-        // collect all suitable props
-        const allProps = this._metadataStorage.getAllProperties(type);
-        
-        if (context.forceExpose) {
-            // add properties from source
-            Object.keys(source)
-                .forEach(propKey => allProps.add(propKey));
-        }
-        
         // add type property
         if (typeDef) {
             if (typeDef.name) {
@@ -251,120 +242,144 @@ export class Serializer
             }
         }
         
-        for (const propKey of allProps) {
-            const path = (context.path ? context.path + '.' : '') + propKey.toString();
+        // process all properties
+        const propDepth = context.depth + 1;
+        if (
+            options.depth === undefined
+            || propDepth <= options.depth
+        ) {
+            // collect all suitable props
+            const allProps = this._metadataStorage.getAllProperties(type);
             
-            const propDef : PropertyDefinition = this._metadataStorage
-                .getPropertyDefinition(type, propKey);
+            if (context.forceExpose) {
+                // add properties from source
+                Object.keys(source)
+                    .forEach(propKey => allProps.add(propKey));
+            }
             
-            // detect non-readable prop
-            const dscr = propDef?.descriptor;
-            if (dscr) {
-                if (dscr.set && !dscr.get) {
-                    // skip
+            for (const propKey of allProps) {
+                const path = (context.path ? context.path + '.' : '') + propKey.toString();
+                
+                const propDef : PropertyDefinition = this._metadataStorage
+                    .getPropertyDefinition(type, propKey);
+                
+                // detect non-readable prop
+                const dscr = propDef?.descriptor;
+                if (dscr) {
+                    if (dscr.set && !dscr.get) {
+                        // skip
+                        continue;
+                    }
+                }
+                
+                // check should property be exposed
+                const [ exposeMode, exposeDeeply, childGraph ] = this._calcExposition(
+                    propKey,
+                    propDef,
+                    options,
+                    context
+                );
+                
+                if (!exposeMode) {
+                    // drop further processing for this prop
                     continue;
                 }
-            }
-            
-            // check should property be exposed
-            const [ exposeMode, exposeDeeply, childGraph ] = this._calcExposition(
-                propKey,
-                propDef,
-                options,
-                context
-            );
-            
-            if (!exposeMode) {
-                // drop further processing for this prop
-                continue;
-            }
-            
-            // initially set to undefined
-            let valueToSet = undefined;
-            let sourceValue = source[propKey];
-            
-            // auto detect array type
-            let propType = propDef.type;
-            if (!propType) {
-                if (sourceValue instanceof Array) {
-                    propType = { arrayOf: () => undefined };
+                
+                // initially set to undefined
+                let valueToSet = undefined;
+                let sourceValue = source[propKey];
+                
+                // auto detect array type
+                let propType = propDef.type;
+                if (!propType) {
+                    if (sourceValue instanceof Array) {
+                        propType = { arrayOf: () => undefined };
+                    }
                 }
-            }
-            
-            // prepare child context
-            const childContext : SerializationContext.ToPlain = {
-                ...context,
-                transformers: propDef.transformers?.toPlain,
-                parent: source,
-                propertyKey: propKey,
-                path,
-                depth: context.depth + 1,
-                circular: [ ...context.circular, source ],
-                graph: childGraph,
-                forceExpose: context.forceExpose ?? exposeDeeply,
-            };
-            
-            // no type case
-            if (!propType) {
-                valueToSet = this._toPlain(
-                    sourceValue,
-                    options,
-                    {
-                        ...childContext,
-                        type: undefined
-                    }
-                );
-            }
-            // simple type specified
-            else if (propType.type) {
-                valueToSet = this._toPlain(
-                    sourceValue,
-                    options,
-                    {
-                        ...childContext,
-                        type: propType.type(),
-                    }
-                );
-            }
-            // array of specified
-            else if (propType.arrayOf) {
-                if (sourceValue instanceof Array) {
-                    valueToSet = [];
-                    
-                    for (const idx in sourceValue) {
-                        valueToSet[idx] = this._toPlain(
-                            sourceValue[idx],
-                            options,
-                            {
-                                ...childContext,
-                                type: propType.arrayOf(),
-                                path: path + '.' + idx
+                
+                // prepare child context
+                const childContext : SerializationContext.ToPlain = {
+                    ...context,
+                    transformers: propDef.transformers?.toPlain,
+                    parent: source,
+                    propertyKey: propKey,
+                    path,
+                    depth: propDepth,
+                    circular: [ ...context.circular, source ],
+                    graph: childGraph,
+                    forceExpose: context.forceExpose ?? exposeDeeply,
+                };
+                
+                // no type case
+                if (!propType) {
+                    valueToSet = this._toPlain(
+                        sourceValue,
+                        options,
+                        {
+                            ...childContext,
+                            type: undefined
+                        }
+                    );
+                }
+                // simple type specified
+                else if (propType.type) {
+                    valueToSet = this._toPlain(
+                        sourceValue,
+                        options,
+                        {
+                            ...childContext,
+                            type: propType.type(),
+                        }
+                    );
+                }
+                // array of specified
+                else if (propType.arrayOf) {
+                    if (sourceValue instanceof Array) {
+                        valueToSet = [];
+                        
+                        for (const idx in sourceValue) {
+                            const subValue = this._toPlain(
+                                sourceValue[idx],
+                                options,
+                                {
+                                    ...childContext,
+                                    type: propType.arrayOf(),
+                                    path: path + '.' + idx,
+                                    depth: propDepth + 1,
+                                }
+                            );
+                            if (![ undefined, null ].includes(subValue)) {
+                                valueToSet[idx] = subValue;
                             }
-                        );
+                        }
                     }
                 }
-            }
-            // record of specified
-            else if (propType.recordOf) {
-                if (sourceValue instanceof Object) {
-                    valueToSet = {};
-                    
-                    for (const prop2 in sourceValue) {
-                        valueToSet[prop2] = this._toPlain(
-                            sourceValue[prop2],
-                            options,
-                            {
-                                ...childContext,
-                                type: propType.recordOf(),
-                                path: path + '.' + prop2
+                // record of specified
+                else if (propType.recordOf) {
+                    if (sourceValue instanceof Object) {
+                        valueToSet = {};
+                        
+                        for (const prop2 in sourceValue) {
+                            const subValue = this._toPlain(
+                                sourceValue[prop2],
+                                options,
+                                {
+                                    ...childContext,
+                                    type: propType.recordOf(),
+                                    path: path + '.' + prop2,
+                                    depth: propDepth + 1,
+                                }
+                            );
+                            if (subValue !== undefined) {
+                                valueToSet[prop2] = subValue;
                             }
-                        );
+                        }
                     }
                 }
-            }
-            
-            if (valueToSet !== undefined) {
-                plain[propKey] = valueToSet;
+                
+                if (valueToSet !== undefined) {
+                    plain[propKey] = valueToSet;
+                }
             }
         }
         

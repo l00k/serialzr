@@ -518,6 +518,29 @@ prepareSerializerContext('ToPlain / Groups', () => {
             });
         });
         
+        it('should properly handle depth', () => {
+            const plain = serializer.toPlain(boss, {
+                depth: 2,
+            });
+            
+            expect(plain).to.deep.equal({
+                [TypeProp]: 'foo54',
+                name: 'boss',
+                subs: [
+                    {
+                        [TypeProp]: 'foo54',
+                        name: 'manager',
+                    },
+                ],
+                subsAliased: {
+                    c: {
+                        [TypeProp]: 'foo54',
+                        name: 'manager',
+                    },
+                },
+            });
+        });
+        
         it('should catch circular references - from bottom to top', () => {
             const plain = serializer.toPlain(employee1);
             
