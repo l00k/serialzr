@@ -1,8 +1,8 @@
-import { registerSerializerTests } from '#/test-helper.js';
+import { prepareSerializerContext } from '#/test-helper.js';
 import { MetadataStorage, Srlz } from '$/index.js';
 
 
-registerSerializerTests('Annotations', () => {
+prepareSerializerContext('Annotations', () => {
     describe('Transform', () => {
         const fn = (obj : any) => obj.constructor.name;
         

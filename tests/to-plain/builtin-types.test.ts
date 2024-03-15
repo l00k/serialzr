@@ -1,7 +1,7 @@
-import { registerSerializerTests } from '#/test-helper.js';
+import { prepareSerializerContext } from '#/test-helper.js';
 import { serializer } from '$/index.js';
 
-registerSerializerTests('ToPlain / Built-in types', () => {
+prepareSerializerContext('ToPlain / Built-in types', () => {
     const examples = [
         {
             name: 'undefined',

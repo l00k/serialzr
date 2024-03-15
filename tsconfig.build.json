@@ -8,6 +8,7 @@
         
         "ignoreDeprecations": "5.0",
         
+        "sourceMap": false,
         "declaration": true
     },
     "include": [

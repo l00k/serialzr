@@ -1,8 +1,8 @@
-import { registerSerializerTests } from '#/test-helper.js';
+import { prepareSerializerContext } from '#/test-helper.js';
 import { serializer } from '$/index.js';
 
 
-registerSerializerTests('Basics', () => {
+prepareSerializerContext('Basics', () => {
     after(() => {
         serializer['_initiated'] = false;
         serializer.init();

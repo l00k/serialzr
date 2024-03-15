@@ -17,7 +17,7 @@ function restoreMetadataStorage (backup : MetadataStorage) : void
     serializer['_metadataStorage'] = backup;
 }
 
-export function registerSerializerTests (
+export function prepareSerializerContext (
     name : string,
     fn : Function
 ) : void

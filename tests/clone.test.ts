@@ -1,8 +1,8 @@
-import { registerSerializerTests } from '#/test-helper.js';
+import { prepareSerializerContext } from '#/test-helper.js';
 import { serializer, Srlz } from '$/index.js';
 
 
-registerSerializerTests('Clone', () => {
+prepareSerializerContext('Clone', () => {
     @Srlz.Type()
     class Player
     {

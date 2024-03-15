@@ -3,13 +3,9 @@
     "version": "1.0.0",
     "license": "MIT",
     "type": "module",
+    "module": "dist/index.js",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
-    "exports": {
-        ".": {
-            "import": "./dist/index.js"
-        }
-    },
     "scripts": {
         "build": "tspc -P tsconfig.build.json",
         "test": "mocha --import=tsx",

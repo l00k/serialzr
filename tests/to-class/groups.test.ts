@@ -1,9 +1,9 @@
-import { registerSerializerTests } from '#/test-helper.js';
+import { prepareSerializerContext } from '#/test-helper.js';
 import { serializer, Srlz, Strategy } from '$/index.js';
 
 const TypeProp = '@type';
 
-registerSerializerTests('ToClass / Groups', () => {
+prepareSerializerContext('ToClass / Groups', () => {
     describe('type #1 - simple groups', () => {
         @Srlz.Type('foo1')
         class Foo

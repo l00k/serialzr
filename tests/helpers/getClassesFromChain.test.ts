@@ -1,8 +1,8 @@
-import { registerSerializerTests } from '#/test-helper.js';
+import { prepareSerializerContext } from '#/test-helper.js';
 import { Exception, getClassesFromChain } from '$/helpers/index.js';
 
 
-registerSerializerTests('Helpers / getClassesFromChain', () => {
+prepareSerializerContext('Helpers / getClassesFromChain', () => {
     class Base {}
     
     class Child extends Base {}

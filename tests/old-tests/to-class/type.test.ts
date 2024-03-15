@@ -1,8 +1,8 @@
-import { registerSerializerTests } from '#/test-helper.js';
+import { prepareSerializerContext } from '#/test-helper.js';
 import { serializer, Srlz } from '$/index.js';
 
 
-registerSerializerTests('To Class / Type', () => {
+prepareSerializerContext('To Class / Type', () => {
     class Item
     {
         @Srlz.Expose()

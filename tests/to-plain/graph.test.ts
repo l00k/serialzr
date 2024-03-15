@@ -1,9 +1,9 @@
-import { registerSerializerTests } from '#/test-helper.js';
+import { prepareSerializerContext } from '#/test-helper.js';
 import { serializer, Srlz } from '$/index.js';
 
 const TypeProp = '@type';
 
-registerSerializerTests('ToPlain / Graphs', () => {
+prepareSerializerContext('ToPlain / Graphs', () => {
     @Srlz.Type('book')
     class Book
     {
