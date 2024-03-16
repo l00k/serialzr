@@ -3,7 +3,9 @@
 JS library for serializing and deserializing complex objects into JSON and back.
 
 ![NPM Version](https://img.shields.io/npm/v/serialzr)
-
+![GitHub top language](https://img.shields.io/github/languages/top/l00k/serialzr)
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/l00k/serialzr/ci.yaml?branch=master)
+![Codecov](https://img.shields.io/codecov/c/github/l00k/serialzr)
 
 ## Features
 - two-way serialization / deserialization without specifying target type - thanks to `@type` property
@@ -19,22 +21,4 @@ JS library for serializing and deserializing complex objects into JSON and back.
 ## NPM package
 ```bash
 yarn add serialzr
-```
-
-## Sample
-```ts
-@Srlz.Type('veryComplexObject')
-class ComplexObject {
-    public a : 
-}
-
-const plain = serializer.toPlain(
-    new ComplexObject({
-        a: 1,
-        b: '2',
-        c: new Date('2020-01-01T00:00:00Z'),
-        d: [1, 2, 3],
-        e: { f: 4, g: 5 }
-    })
-);
 ```
