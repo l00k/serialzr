@@ -355,6 +355,44 @@ prepareSerializerContext('ToClass / Groups', () => {
             });
         });
         
+        it('should transform to proper type by explict type name', () => {
+            const plain = {
+                [TypeProp]: 'animal/cat',
+                id: 4,
+                name: 'doggie',
+                sound: 'barkie',
+                race: 'labradorry',
+                size: 'small',
+            };
+            
+            const object = serializer.toClass(plain, {
+                type: 'animal/dog',
+                groups: [ 'group1' ],
+            });
+            
+            expect(object).to.be.instanceof(Dog);
+            expect(object).to.deep.equal({
+                id: 4,
+                name: 'doggie',
+                sound: 'bark',
+                race: 'labradorry',
+            });
+        });
+        
+        it('should throw for unknown type name', () => {
+            const plain = {
+                [TypeProp]: 'animal/cat',
+                id: 4,
+            };
+            
+            const fn = () => serializer.toClass(plain, {
+                type: 'animal/dogxxx',
+                groups: [ 'group1' ],
+            });
+            
+            expect(fn).to.throw('Unknown type name');
+        });
+        
         it('should transform to proper type by @type', () => {
             const plain = {
                 [TypeProp]: 'animal/dog',
@@ -399,6 +437,54 @@ prepareSerializerContext('ToClass / Groups', () => {
                 name: 'doggie',
                 sound: 'bark',
                 race: 'labradorry',
+            });
+        });
+    });
+    
+    describe('type #4 - auto groups', () => {
+        @Srlz.Type('foo6')
+        @Srlz.AutoGroup('admin', (obj, ctx) => ctx.users?.includes(obj.id))
+        @Srlz.AutoGroup([ 'lowId' ], (obj) => obj.id < 10)
+        class Foo
+        {
+            @Srlz.Id()
+            public id : number = 1;
+            
+            @Srlz.Expose([ 'admin' ])
+            public stats : string = 'stats';
+        }
+        
+        const plain = {
+            [TypeProp]: 'foo6',
+            id: 2,
+            stats: 'xxx'
+        };
+        
+        
+        it('groups should be automatically added', () => {
+            const object = serializer.toClass(plain, {
+                ctxData: {
+                    users: [ 2 ]
+                }
+            });
+            
+            expect(object).to.be.instanceof(Foo);
+            expect(object).to.deep.equal({
+                id: 2,
+                stats: 'xxx',
+            });
+        });
+        
+        it('groups should not be automatically added', () => {
+            const object = serializer.toClass(plain, {
+                ctxData: {
+                    users: []
+                }
+            });
+            
+            expect(object).to.deep.equal({
+                id: 2,
+                stats: 'stats',
             });
         });
     });

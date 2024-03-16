@@ -6,7 +6,7 @@ export class Exception extends Error
     
     public constructor (
         message : string,
-        code : number = -1
+        code : number
     )
     {
         super(message);

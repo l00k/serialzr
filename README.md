@@ -16,7 +16,7 @@ JS library for serializing and deserializing complex objects into JSON and back.
 
 - zero dependencies
 - full TypeScript support
-- test coverage > 95%
+- covered with tests
 
 ## NPM package
 ```bash

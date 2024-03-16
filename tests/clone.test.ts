@@ -85,4 +85,9 @@ prepareSerializerContext('Clone', () => {
         const clone = serializer.clone(source);
         expect(clone).to.eql(source);
     });
+    
+    it ('should return primitive', () => {
+        const clone = serializer.clone(null);
+        expect(clone).to.eql(null);
+    });
 });

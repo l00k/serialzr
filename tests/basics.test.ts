@@ -1,5 +1,5 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { serializer } from '$/index.js';
+import { Srlz, serializer } from '$/index.js';
 
 
 prepareSerializerContext('Basics', () => {
@@ -7,6 +7,9 @@ prepareSerializerContext('Basics', () => {
         serializer['_initiated'] = false;
         serializer.init();
     });
+    
+    @Srlz.Type('sample')
+    class Foo {}
     
     it('should assign type property', () => {
         serializer['_initiated'] = false;
@@ -22,5 +25,23 @@ prepareSerializerContext('Basics', () => {
         serializer.init();
         
         expect(() => serializer.init()).to.throw();
+    });
+    
+    it('should properly return type name', () => {
+        expect(serializer.getTypeName(Foo)).to.be.equal('sample');
+    });
+    
+    it('should properly return type by name', () => {
+        expect(serializer.getTypeByName('sample')).to.be.equal(Foo);
+    });
+    
+    it('should throw for unknown type', () => {
+        class Foo2 {}
+        
+        expect(() => serializer.getTypeName(Foo2)).to.throw();
+    });
+    
+    it('should throw for unknown type name', () => {
+        expect(() => serializer.getTypeByName('foooooo2')).to.throw();
     });
 });

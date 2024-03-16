@@ -4,6 +4,7 @@
     ],
     "reporter": [
         "text-summary",
-        "html"
+        "html",
+        "lcov"
     ]
 }
