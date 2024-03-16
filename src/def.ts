@@ -68,7 +68,7 @@ export type ExposeMode = boolean | 'id';
 
 export type ExposeDscr = {
     // modifiers
-    mode? : boolean, // true - expose, false - exclude, 'id' - expose id string
+    mode? : boolean, // true - expose, false - exclude
     deeply? : boolean, // expose deeply
     
     // conditions

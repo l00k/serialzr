@@ -383,6 +383,7 @@ prepareSerializerContext('ToClass / Groups', () => {
             const plain = {
                 [TypeProp]: 'animal/cat',
                 id: 4,
+                
             };
             
             const fn = () => serializer.toClass(plain, {
