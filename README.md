@@ -4,8 +4,8 @@ JS library for serializing and deserializing complex objects into JSON and back.
 
 [![NPM Version](https://img.shields.io/npm/v/serialzr)](https://www.npmjs.com/package/serialzr)
 ![GitHub top language](https://img.shields.io/github/languages/top/l00k/serialzr)
-![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/l00k/serialzr/ci.yaml?branch=master)
-![Codecov](https://img.shields.io/codecov/c/github/l00k/serialzr)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/l00k/serialzr/ci.yaml?branch=master)](https://github.com/l00k/serialzr/actions/workflows/ci.yaml)
+[![Codecov](https://img.shields.io/codecov/c/github/l00k/serialzr)](https://app.codecov.io/gh/l00k/serialzr)
 
 ## Features
 
