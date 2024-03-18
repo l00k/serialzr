@@ -1,3 +1,4 @@
+import { isIterable, isTargetType } from '$/helpers/common.js';
 import type {
     ExposeDscr,
     ExposeGraph,
@@ -128,22 +129,79 @@ export class Serializer
     ) : any
     {
         // check depth limit
-        // if (
-        //     options.depth !== undefined
-        //     && context.depth > options.depth
-        // ) {
-        //     return undefined;
-        // }
+        if (
+            options.depth !== undefined
+            && context.depth > options.depth
+        ) {
+            return undefined;
+        }
         
-        // detect type
+        // auto detect type
+        if (!context.type) {
+            if (source instanceof Array) {
+                context.type = { arrayOf: () => undefined };
+            }
+        }
+        
+        // target type special cases
+        if (context.type) {
+            if (context.type.arrayOf) {
+                if (!isIterable(source)) {
+                    return [];
+                }
+                
+                const array : any = [];
+                for (const [ idx, itemRaw ] of Object.entries(source)) {
+                    const path = (context.path ? context.path + '.' : '') + idx;
+                    const item = this._toPlain<any>(itemRaw, options, {
+                        ...context,
+                        type: { type: context.type.arrayOf },
+                        path,
+                        depth: context.depth + 1,
+                        circular: [ ...context.circular, source ],
+                    });
+                    
+                    if (![ null, undefined ].includes(item)) {
+                        array.push(item);
+                    }
+                }
+                return array;
+            }
+            else if (context.type.recordOf) {
+                if (!(source instanceof Object)) {
+                    return undefined;
+                }
+                
+                const record : any = {};
+                for (const [ propKey, itemRaw ] of Object.entries(source)) {
+                    const path = (context.path ? context.path + '.' : '') + propKey;
+                    const item = this._toPlain<any>(itemRaw, options, {
+                        ...context,
+                        type: { type: context.type.recordOf },
+                        path: path,
+                        depth: context.depth + 1,
+                        circular: [ ...context.circular, source ],
+                    });
+                    
+                    if (![ undefined ].includes(item)) {
+                        record[propKey] = item;
+                    }
+                }
+                return record;
+            }
+        }
+        
+        // detect class type
         const chainClasses = getClassesFromChain(source?.constructor);
         
         let type : any = null;
         if (context.type) {
+            const targetType = context.type?.type();
+            
             // type restricted by context (parent)
-            type = chainClasses.includes(context.type) // allow only classes from the same chain
+            type = chainClasses.includes(targetType) // allow only classes from the same chain
                 ? source.constructor
-                : context.type
+                : targetType
             ;
         }
         else {
@@ -285,18 +343,6 @@ export class Serializer
                     continue;
                 }
                 
-                // initially set to undefined
-                let valueToSet = undefined;
-                let sourceValue = source[propKey];
-                
-                // auto detect array type
-                let propType = propDef.type;
-                if (!propType) {
-                    if (sourceValue instanceof Array) {
-                        propType = { arrayOf: () => undefined };
-                    }
-                }
-                
                 // prepare child context
                 const childContext : SerializationContext.ToPlain = {
                     ...context,
@@ -310,72 +356,15 @@ export class Serializer
                     forceExpose: context.forceExpose ?? exposeDeeply,
                 };
                 
-                // no type case
-                if (!propType) {
-                    valueToSet = this._toPlain(
-                        sourceValue,
-                        options,
-                        {
-                            ...childContext,
-                            type: undefined
-                        }
-                    );
-                }
-                // simple type specified
-                else if (propType.type) {
-                    valueToSet = this._toPlain(
-                        sourceValue,
-                        options,
-                        {
-                            ...childContext,
-                            type: propType.type(),
-                        }
-                    );
-                }
-                // array of specified
-                else if (propType.arrayOf) {
-                    if (sourceValue instanceof Array) {
-                        valueToSet = [];
-                        
-                        for (const idx in sourceValue) {
-                            const subValue = this._toPlain(
-                                sourceValue[idx],
-                                options,
-                                {
-                                    ...childContext,
-                                    type: propType.arrayOf(),
-                                    path: path + '.' + idx,
-                                    depth: propDepth + 1,
-                                }
-                            );
-                            if (![ undefined, null ].includes(subValue)) {
-                                valueToSet[idx] = subValue;
-                            }
-                        }
+                // serializer inner
+                const valueToSet = this._toPlain(
+                    source[propKey],
+                    options,
+                    {
+                        ...childContext,
+                        type: propDef.type,
                     }
-                }
-                // record of specified
-                else if (propType.recordOf) {
-                    if (sourceValue instanceof Object) {
-                        valueToSet = {};
-                        
-                        for (const prop2 in sourceValue) {
-                            const subValue = this._toPlain(
-                                sourceValue[prop2],
-                                options,
-                                {
-                                    ...childContext,
-                                    type: propType.recordOf(),
-                                    path: path + '.' + prop2,
-                                    depth: propDepth + 1,
-                                }
-                            );
-                            if (subValue !== undefined) {
-                                valueToSet[prop2] = subValue;
-                            }
-                        }
-                    }
-                }
+                );
                 
                 if (valueToSet !== undefined) {
                     plain[propKey] = valueToSet;
@@ -458,11 +447,16 @@ export class Serializer
                     );
                 }
                 
-                context.type = type;
+                context.type = { type: () => type };
             }
-            else {
+            else if (isTargetType(options.type)) {
                 context.type = options.type;
             }
+            else {
+                const type = options.type;
+                context.type = { type: () => type };
+            }
+            
             delete options.type;
         }
         if (options.ctxData) {
@@ -490,7 +484,51 @@ export class Serializer
             return undefined;
         }
         
-        // detect type
+        // target type special cases
+        if (context.type) {
+            if (context.type.arrayOf) {
+                if (!isIterable(source)) {
+                    return <any>[];
+                }
+                
+                const array : any = [];
+                for (const [ idx, itemRaw ] of Object.entries(source)) {
+                    const path = (context.path ? context.path + '.' : '') + idx;
+                    const item = this._toClass<any>(itemRaw, options, {
+                        ...context,
+                        type: { type: context.type.arrayOf },
+                        path: path,
+                    });
+                    
+                    if (![ null, undefined ].includes(item)) {
+                        array.push(item);
+                    }
+                }
+                return array;
+            }
+            else if (context.type.recordOf) {
+                if (!(source instanceof Object)) {
+                    return undefined;
+                }
+                
+                const record : any = {};
+                for (const [ propKey, itemRaw ] of Object.entries(source)) {
+                    const path = (context.path ? context.path + '.' : '') + propKey;
+                    const item = this._toClass<any>(itemRaw, options, {
+                        ...context,
+                        type: { type: context.type.recordOf },
+                        path: path,
+                    });
+                    
+                    if (![ undefined ].includes(item)) {
+                        record[propKey] = item;
+                    }
+                }
+                return record;
+            }
+        }
+        
+        // detect class type
         const type = this._detectTypeFromPlain(source, context);
         
         // get type definition
@@ -554,6 +592,7 @@ export class Serializer
         }
         
         // create target instance
+        // const instance = !(type && source instanceof type)
         const instance = !(source instanceof type)
             ? new type() // new instance of type
             : source // use provided instance
@@ -570,10 +609,8 @@ export class Serializer
         for (const propKey of allProps) {
             const path = (context.path ? context.path + '.' : '') + propKey.toString();
             
-            const propDef : PropertyDefinition = this._metadataStorage.getPropertyDefinition(
-                type,
-                propKey
-            );
+            const propDef : PropertyDefinition = this._metadataStorage
+                .getPropertyDefinition(type, propKey);
             
             // detect non-writable prop
             const dscr = propDef?.descriptor;
@@ -584,8 +621,6 @@ export class Serializer
                 }
             }
             
-            let valueToSet = instance[propKey];
-            
             // check should property be exposed
             const [ exposeMode, exposeDeeply, childGraph ] = this._calcExposition(
                 propKey,
@@ -593,18 +628,6 @@ export class Serializer
                 options,
                 context
             );
-            
-            // get proper source value
-            let sourceValue = instance[propKey]; // initially pick instance default value as source
-            if (
-                exposeMode // property exposed to changes
-                && source.hasOwnProperty(propKey) // property provided in source
-            ) {
-                sourceValue = source[propKey]; // override with provided source value
-            }
-            
-            // get prop type
-            const propType = propDef.type;
             
             // prepare child context
             const childContext : SerializationContext.ToClass = {
@@ -617,65 +640,24 @@ export class Serializer
                 forceExpose: context.forceExpose ?? exposeDeeply,
             };
             
-            // start transformation
-            if (!propType) {
-                valueToSet = this._toClass(
-                    sourceValue,
-                    options,
-                    {
-                        ...childContext,
-                        type: undefined
-                    }
-                );
-            }
-            else if (propType.type) {
-                valueToSet = this._toClass(
-                    sourceValue,
-                    options,
-                    {
-                        ...childContext,
-                        type: propType.type(),
-                    }
-                );
-            }
-            else if (propType.arrayOf) {
-                valueToSet = [];
-                
-                for (const idx in sourceValue) {
-                    const subValue = this._toClass(
-                        sourceValue[idx],
-                        options,
-                        {
-                            ...childContext,
-                            type: propType.arrayOf(),
-                            path: path + '.' + idx
-                        }
-                    );
-                    if (![ undefined, null ].includes(subValue)) {
-                        valueToSet[idx] = subValue;
-                    }
-                }
-            }
-            else if (propType.recordOf) {
-                valueToSet = {};
-                
-                for (const prop2 in sourceValue) {
-                    const subValue = this._toClass(
-                        sourceValue[prop2],
-                        options,
-                        {
-                            ...childContext,
-                            type: propType.recordOf(),
-                            path: path + '.' + prop2
-                        }
-                    );
-                    if (subValue !== undefined) {
-                        valueToSet[prop2] = subValue;
-                    }
-                }
+            // get proper source value
+            let sourceValue = instance[propKey]; // initially pick instance default value as source
+            if (
+                exposeMode // property exposed to changes
+                && source.hasOwnProperty(propKey) // property provided in source
+            ) {
+                sourceValue = source[propKey]; // override with provided source value
             }
             
-            instance[propKey] = valueToSet;
+            // serializer inner
+            instance[propKey] = this._toClass(
+                sourceValue,
+                options,
+                {
+                    ...childContext,
+                    type: propDef.type,
+                }
+            );
         }
         
         // transformation after
@@ -882,15 +864,17 @@ export class Serializer
         }
         
         if (context.type) {
+            const type = context.type.type();
+            
             if (providedType) {
                 // verify is subclass
                 const chainClasses = getClassesFromChain(providedType);
-                if (chainClasses.includes(context.type)) {
+                if (chainClasses.includes(type)) {
                     return providedType;
                 }
             }
             
-            return context.type;
+            return type;
         }
         
         // return provided type

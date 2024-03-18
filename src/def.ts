@@ -143,7 +143,7 @@ export namespace SerializationOptions
     }
     
     export type ToClass<T = any> = Base<T> & {
-        type? : ClassConstructor<T> | string,
+        type? : TargetType | ClassConstructor<T> | string,
     };
     export type ToPlain<T = any> = Base<T> & {
         depth? : number,
@@ -155,7 +155,7 @@ export namespace SerializationOptions
 export namespace SerializationContext
 {
     export type Base<T> = {
-        type? : ClassConstructor<any>,
+        type? : TargetType,
         transformers? : TransformerDscr,
         forceExpose? : boolean,
         groups? : string[],

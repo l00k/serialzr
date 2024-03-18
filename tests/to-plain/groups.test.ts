@@ -435,6 +435,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                             {
                                 [TypeProp]: 'foo54',
                                 name: 'employee1',
+                                subs: [],
                                 supervisor: {
                                     [TypeProp]: 'foo54',
                                     name: 'manager',
@@ -443,6 +444,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                             {
                                 [TypeProp]: 'foo54',
                                 name: 'employee2',
+                                subs: [],
                                 supervisor: {
                                     [TypeProp]: 'foo54',
                                     name: 'manager',
@@ -453,6 +455,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                             a: {
                                 [TypeProp]: 'foo54',
                                 name: 'employee1',
+                                subs: [],
                                 supervisor: {
                                     [TypeProp]: 'foo54',
                                     name: 'manager',
@@ -461,6 +464,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                             b: {
                                 [TypeProp]: 'foo54',
                                 name: 'employee2',
+                                subs: [],
                                 supervisor: {
                                     [TypeProp]: 'foo54',
                                     name: 'manager',
@@ -481,6 +485,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                             {
                                 [TypeProp]: 'foo54',
                                 name: 'employee1',
+                                subs: [],
                                 supervisor: {
                                     [TypeProp]: 'foo54',
                                     name: 'manager',
@@ -489,6 +494,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                             {
                                 [TypeProp]: 'foo54',
                                 name: 'employee2',
+                                subs: [],
                                 supervisor: {
                                     [TypeProp]: 'foo54',
                                     name: 'manager',
@@ -499,6 +505,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                             a: {
                                 [TypeProp]: 'foo54',
                                 name: 'employee1',
+                                subs: [],
                                 supervisor: {
                                     [TypeProp]: 'foo54',
                                     name: 'manager',
@@ -507,6 +514,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                             b: {
                                 [TypeProp]: 'foo54',
                                 name: 'employee2',
+                                subs: [],
                                 supervisor: {
                                     [TypeProp]: 'foo54',
                                     name: 'manager',
@@ -541,12 +549,26 @@ prepareSerializerContext('ToPlain / Groups', () => {
             });
         });
         
+        it('should properly handle depth', () => {
+            const plain = serializer.toPlain(boss, {
+                depth: 1,
+            });
+            
+            expect(plain).to.deep.equal({
+                [TypeProp]: 'foo54',
+                name: 'boss',
+                subs: [],
+                subsAliased: {},
+            });
+        });
+        
         it('should catch circular references - from bottom to top', () => {
             const plain = serializer.toPlain(employee1);
             
             expect(plain).to.deep.equal({
                 [TypeProp]: 'foo54',
                 name: 'employee1',
+                subs: [],
                 supervisor: {
                     [TypeProp]: 'foo54',
                     name: 'manager',
@@ -574,6 +596,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                         {
                             [TypeProp]: 'foo54',
                             name: 'employee2',
+                            subs: [],
                             supervisor: {
                                 [TypeProp]: 'foo54',
                                 name: 'manager',
@@ -588,6 +611,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
                         b: {
                             [TypeProp]: 'foo54',
                             name: 'employee2',
+                            subs: [],
                             supervisor: {
                                 [TypeProp]: 'foo54',
                                 name: 'manager',

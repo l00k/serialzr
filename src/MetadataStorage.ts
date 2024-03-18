@@ -55,32 +55,32 @@ export class MetadataStorage
     {
         // try to aquire type name from parent class
         if (!typeDef.name) {
+            let typeName = null;
+        
             const parentClasses = getClassesFromChain(targetClass);
             for (const parentClass of parentClasses) {
                 const parentTypeDef = this._types.get(parentClass);
                 if (parentTypeDef?.name) {
-                    const fullName = parentTypeDef.name + '/' + targetClass.name;
-                    typeDef.name = fullName;
+                    typeName = parentTypeDef.name + '/' + targetClass.name;
                     break;
                 }
             }
-        }
-        
-        // aquire type name from class name
-        if (!typeDef.name) {
-            typeDef.name = targetClass.name;
-        }
-        
-        if (typeDef.name) {
-            if (this._typesMap[typeDef.name]) {
-                throw new Exception(
-                    `Type with name "${typeDef.name}" already registered`,
-                    1709649278876
-                );
+            
+            if (!typeName) {
+                typeName = targetClass.name;
             }
             
-            this._typesMap[typeDef.name] = targetClass;
+            typeDef.name = typeName;
         }
+        
+        if (this._typesMap[typeDef.name]) {
+            throw new Exception(
+                `Type with name "${typeDef.name}" already registered`,
+                1709649278876
+            );
+        }
+        
+        this._typesMap[typeDef.name] = targetClass;
         
         const typeDefinition = this._initTypeDefinition(targetClass);
         Object.assign(typeDefinition, typeDef);

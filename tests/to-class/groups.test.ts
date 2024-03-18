@@ -192,8 +192,8 @@ prepareSerializerContext('ToClass / Groups', () => {
         
         
         it('single nested object', () => {
-            const object = serializer.toClass(plain, {
-                type: Foo
+            const object = serializer.toClass<Foo>(plain, {
+                type: { type: () => Foo }
             });
             
             expect(object).to.be.instanceof(Foo);

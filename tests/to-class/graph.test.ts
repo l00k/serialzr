@@ -64,8 +64,8 @@ prepareSerializerContext('ToClass / Graphs', () => {
             id: undefined,
             name: undefined,
             age: undefined,
-            books: [],
-            aliasedBooks: {},
+            books: undefined,
+            aliasedBooks: undefined,
             secret: undefined,
         });
     });
