@@ -484,6 +484,13 @@ export class Serializer
             return undefined;
         }
         
+        // auto detect type
+        if (!context.type) {
+            if (source instanceof Array) {
+                context.type = { arrayOf: () => undefined };
+            }
+        }
+        
         // target type special cases
         if (context.type) {
             if (context.type.arrayOf) {
@@ -865,16 +872,17 @@ export class Serializer
         
         if (context.type) {
             const type = context.type.type();
-            
-            if (providedType) {
-                // verify is subclass
-                const chainClasses = getClassesFromChain(providedType);
-                if (chainClasses.includes(type)) {
-                    return providedType;
+            if (type) {
+                if (providedType) {
+                    // verify is subclass
+                    const chainClasses = getClassesFromChain(providedType);
+                    if (chainClasses.includes(type)) {
+                        return providedType;
+                    }
                 }
+                
+                return type;
             }
-            
-            return type;
         }
         
         // return provided type
