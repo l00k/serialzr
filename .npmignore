@@ -1,0 +1,11 @@
+.github/
+.nyc_output/
+coverage/
+node_modules/
+src/
+tests/
+
+.mocharc.json
+.nycrc.json
+codecov.yml
+tsconfig.*json
