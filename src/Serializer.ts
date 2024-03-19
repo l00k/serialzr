@@ -192,21 +192,26 @@ export class Serializer
         }
         
         // detect class type
-        const chainClasses = getClassesFromChain(source?.constructor);
+        const sourceType = source?.constructor;
+        const chainClasses = getClassesFromChain(sourceType);
         
         let type : any = null;
         if (context.type) {
             const targetType = context.type?.type();
             
-            // type restricted by context (parent)
-            type = chainClasses.includes(targetType) // allow only classes from the same chain
-                ? source.constructor
-                : targetType
-            ;
+            if (targetType) {
+                // type restricted by context (parent)
+                type = chainClasses.includes(targetType) // allow only classes from the same chain
+                    ? sourceType
+                    : targetType
+                ;
+            }
+            else {
+                type = sourceType;
+            }
         }
         else {
-            // pick actual class if not restricted
-            type = source?.constructor;
+            type = sourceType;
         }
         
         // get type definition
@@ -871,7 +876,7 @@ export class Serializer
         }
         
         if (context.type) {
-            const type = context.type.type();
+            const type = context.type.type?.();
             if (type) {
                 if (providedType) {
                     // verify is subclass
