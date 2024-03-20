@@ -26,7 +26,6 @@ export enum Strategy
 {
     Expose = 'expose',
     Exclude = 'exclude',
-    Graph = 'graph',
 }
 
 
@@ -121,6 +120,10 @@ export type TypeDefinition = {
     idProperty? : PropertyKey,
     autoGroups? : AutoGroupEntry[],
     transformers? : Transformers,
+    
+    excludePrefixes? : string[],
+    excludeExtraneous? : boolean,
+    defaultStrategy? : Strategy,
 }
 
 export type PropertyDefinition = {
@@ -135,7 +138,7 @@ export type PropertyDefinition = {
 export namespace SerializationOptions
 {
     export type Base<T> = {
-        strategy? : Strategy,
+        defaultStrategy? : Strategy,
         groups? : string[],
         graph? : ExposeGraph<T>,
         excludePrefixes? : string[],
@@ -147,6 +150,7 @@ export namespace SerializationOptions
     };
     export type ToPlain<T = any> = Base<T> & {
         depth? : number,
+        type? : Omit<TargetType, 'type'>,
     };
 }
 

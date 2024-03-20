@@ -2,7 +2,10 @@ import type { TargetType, TypedClassDecorator, TypeDefinition, TypeFn } from '..
 import { MetadataStorage } from '../MetadataStorage.js';
 
 
-type TypeDefinitionOpts<T> = Pick<TypeDefinition, 'name'> & {
+type TypeDefinitionOpts<T> = Partial<Pick<
+    TypeDefinition,
+    'name' | 'excludePrefixes' | 'defaultStrategy'
+>> & {
     idProperty? : keyof T,
 };
 

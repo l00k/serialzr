@@ -83,6 +83,29 @@ prepareSerializerContext('ToClass / Built-in types', () => {
             expected: undefined,
             type: BigInt,
         },
+        {
+            name: 'array of strings',
+            value: [ 'text1', 'text2' ],
+            expected: [ 'text1', 'text2' ]
+        },
+        {
+            name: 'wrong array of strings',
+            value: false,
+            expected: [],
+            type: { arrayOf: () => undefined },
+        },
+        {
+            name: 'record of strings',
+            value: { a: 'text1', b: 'text2' },
+            expected: { a: 'text1', b: 'text2' },
+            type: { recordOf: () => undefined }
+        },
+        {
+            name: 'wrong record of strings',
+            value: false,
+            expected: undefined,
+            type: { recordOf: () => undefined }
+        },
     ];
     
     for (const example of examples) {
@@ -95,7 +118,7 @@ prepareSerializerContext('ToClass / Built-in types', () => {
                 expect(example.cmp(example.expected, target)).to.equal(true);
             }
             else {
-                expect(target).to.equal(example.expected);
+                expect(target).to.deep.equal(example.expected);
             }
         });
     }

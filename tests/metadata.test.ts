@@ -45,11 +45,11 @@ prepareSerializerContext('Metadata', () => {
         const properties = metadataStorage.getAllProperties(Player);
         
         expect(Array.from(properties)).to.be.eql([
+            'name',
+            'adnotations',
             'id',
             'secret',
             'secret2',
-            'name',
-            'adnotations',
         ]);
     });
     
@@ -60,6 +60,12 @@ prepareSerializerContext('Metadata', () => {
         );
         
         expect(idPropDef).to.be.eql({
+            descriptor: {
+                configurable: true,
+                enumerable: true,
+                value: 2,
+                writable: true,
+            },
             exposeDscrs: [
                 { mode: true },
             ],
@@ -88,11 +94,11 @@ prepareSerializerContext('Metadata', () => {
         const properties = metadataStorage.getAllProperties(Player);
         
         expect(Array.from(properties)).to.be.eql([
+            'name',
+            'adnotations',
             'id',
             'secret',
             'secret2',
-            'name',
-            'adnotations',
             'foo',
         ]);
     });

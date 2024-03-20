@@ -75,7 +75,7 @@ prepareSerializerContext('ToPlain / Groups', () => {
         
         it('without specifiying any group + default expose', () => {
             const plain = serializer.toPlain(object, {
-                strategy: Strategy.Expose
+                defaultStrategy: Strategy.Expose
             });
             
             expect(plain).to.deep.equal({

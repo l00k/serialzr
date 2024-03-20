@@ -53,12 +53,25 @@ prepareSerializerContext('ToPlain / Built-in types', () => {
             value: BigInt('17100318302011710275780440'),
             expected: '17100318302011710275780440',
         },
+        {
+            name: 'array of strings',
+            value: [ 'text1', 'text2' ],
+            expected: [ 'text1', 'text2' ]
+        },
+        {
+            name: 'record of strings',
+            value: { a: 'text1', b: 'text2' },
+            expected: { a: 'text1', b: 'text2' },
+            type: { recordOf: () => undefined }
+        },
     ];
     
     for (const example of examples) {
         it(example.name, () => {
-            const plain = serializer.toPlain(example.value);
-            expect(plain).to.equal(example.expected);
+            const plain = serializer.toPlain(example.value, {
+                type: <any>example.type
+            });
+            expect(plain).to.deep.equal(example.expected);
         });
     }
 });

@@ -158,7 +158,10 @@ prepareSerializerContext('To Class / Exposing', () => {
         
         const obj = serializer.toClass(
             plain,
-            { type: Player, strategy: Strategy.Expose }
+            {
+                type: Player,
+                defaultStrategy: Strategy.Expose
+            }
         );
         
         expect(obj).instanceof(Player);
@@ -190,7 +193,7 @@ prepareSerializerContext('To Class / Exposing', () => {
         
         const obj = serializer.toClass(
             plain,
-            { type: User, strategy: Strategy.Expose, excludePrefixes: [ '__' ] }
+            { type: User, defaultStrategy: Strategy.Expose, excludePrefixes: [ '__' ] }
         );
         
         expect(obj).instanceof(User);

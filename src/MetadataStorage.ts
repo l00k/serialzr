@@ -56,7 +56,7 @@ export class MetadataStorage
         // try to aquire type name from parent class
         if (!typeDef.name) {
             let typeName = null;
-        
+            
             const parentClasses = getClassesFromChain(targetClass);
             for (const parentClass of parentClasses) {
                 const parentTypeDef = this._types.get(parentClass);
@@ -124,8 +124,14 @@ export class MetadataStorage
                 idProperty: undefined,
                 autoGroups: [],
                 transformers: {},
+                excludePrefixes: [],
+                excludeExtraneous: true,
+                defaultStrategy: undefined,
             };
             this._types.set(targetClass, typeDefinition);
+            
+            // get defined properties from instance
+            this._registerInstanceProperties(targetClass);
         }
         
         return typeDefinition;
@@ -135,7 +141,21 @@ export class MetadataStorage
         targetClass : any
     ) : TypeDefinition
     {
-        return this._types.get(targetClass);
+        const classes = getClassesFromChain(targetClass);
+        
+        let typeDef = null;
+        for (const klass of classes.reverse()) {
+            const klassTypeDef = this._types.get(klass);
+            if (klassTypeDef) {
+                if (!typeDef) {
+                    typeDef = {};
+                }
+                
+                Object.assign(typeDef, klassTypeDef);
+            }
+        }
+        
+        return typeDef;
     }
     
     public getTypeByName (
@@ -146,6 +166,38 @@ export class MetadataStorage
     }
     
     
+    protected _registerInstanceProperties (targetClass : any)
+    {
+        // accessors
+        const accessors = Object.getOwnPropertyDescriptors(targetClass.prototype);
+        for (const [ propKey, descriptor ] of Object.entries(accessors)) {
+            if (propKey === 'constructor') {
+                continue;
+            }
+            
+            this.registerPropertyDescriptor(
+                targetClass,
+                propKey,
+                descriptor
+            );
+        }
+        
+        // instance properties
+        try {
+            const instance = new targetClass();
+            const instanceProps = Object.getOwnPropertyDescriptors(instance);
+            for (const [ propKey, descriptor ] of Object.entries(instanceProps)) {
+                this.registerPropertyDescriptor(
+                    targetClass,
+                    propKey,
+                    descriptor
+                );
+            }
+        }
+        catch (e) {}
+    }
+    
+    
     public registerPropertyDescriptor (
         targetClass : any,
         propKey : PropertyKey,
@@ -153,9 +205,7 @@ export class MetadataStorage
     )
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
-        if (!propDefiniton.descriptor) {
-            propDefiniton.descriptor = descriptor;
-        }
+        propDefiniton.descriptor = descriptor;
     }
     
     public registerPropertyExpose (
@@ -165,6 +215,11 @@ export class MetadataStorage
     )
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
+        
+        if (!propDefiniton.exposeDscrs) {
+            propDefiniton.exposeDscrs = [];
+        }
+        
         propDefiniton.exposeDscrs.unshift(exposeDscr);
     }
     
@@ -185,6 +240,11 @@ export class MetadataStorage
     )
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
+        
+        if (!propDefiniton.transformers) {
+            propDefiniton.transformers = {};
+        }
+        
         Object.assign(propDefiniton.transformers, transformers);
     }
     
@@ -200,11 +260,7 @@ export class MetadataStorage
         }
         
         if (!classDefinition[propKey]) {
-            classDefinition[propKey] = {
-                exposeDscrs: [],
-                type: undefined,
-                transformers: {},
-            };
+            classDefinition[propKey] = {};
         }
         
         // clear cache
@@ -224,17 +280,11 @@ export class MetadataStorage
     {
         let propertiesCache = this._propertiesCache.get(targetClass);
         if (!propertiesCache) {
-            // build cache
             propertiesCache = new Set<PropertyKey>();
             
-            // get from instance
-            if (targetClass.prototype) {
-                const instance = new targetClass();
-                Object.keys(instance)
-                    .forEach(propKey => propertiesCache.add(propKey));
-            }
+            // register instance properties
+            this._registerInstanceProperties(targetClass);
             
-            // get from definitons
             const classes = getClassesFromChain(targetClass);
             for (const singleClass of classes) {
                 const classDefinitions = this._properties.get(singleClass);
@@ -257,19 +307,25 @@ export class MetadataStorage
     {
         const classes = getClassesFromChain(targetClass);
         
-        for (const singleClass of classes) {
+        const propDef : PropertyDefinition = {
+            descriptor: undefined,
+            type: undefined,
+            exposeDscrs: [],
+            transformers: {},
+        };
+        for (const singleClass of classes.reverse()) {
             const classDefinitions = this._properties.get(singleClass);
             if (!classDefinitions) {
                 continue;
             }
             
-            const propDefinitions = classDefinitions[propKey];
-            if (propDefinitions) {
-                return propDefinitions;
+            const lvlPropDef = classDefinitions[propKey];
+            if (lvlPropDef) {
+                Object.assign(propDef, lvlPropDef);
             }
         }
         
-        return {};
+        return propDef;
     }
     
 }

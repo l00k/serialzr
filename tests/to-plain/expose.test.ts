@@ -79,7 +79,7 @@ prepareSerializerContext('To Plain / Expose', () => {
         
         const plain = serializer.toPlain(
             object,
-            { strategy: Strategy.Expose }
+            { defaultStrategy: Strategy.Expose }
         );
         
         expect(plain).to.eql({
@@ -105,7 +105,7 @@ prepareSerializerContext('To Plain / Expose', () => {
         
         const plain = serializer.toPlain(
             object,
-            { strategy: Strategy.Expose, excludePrefixes: [ '__' ] }
+            { defaultStrategy: Strategy.Expose, excludePrefixes: [ '__' ] }
         );
         
         expect(plain).to.eql({

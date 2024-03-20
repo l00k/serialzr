@@ -105,7 +105,7 @@ prepareSerializerContext('ToClass / Groups', () => {
         it('without specifiying any group + default expose', () => {
             const object = serializer.toClass(plain, {
                 type: Foo,
-                strategy: Strategy.Expose
+                defaultStrategy: Strategy.Expose
             });
             
             expect(object).to.be.instanceof(Foo);

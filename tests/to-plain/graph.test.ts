@@ -1,5 +1,5 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { serializer, Srlz } from '$/index.js';
+import { serializer, Srlz, Strategy } from '$/index.js';
 
 const TypeProp = '@type';
 
@@ -130,6 +130,37 @@ prepareSerializerContext('ToPlain / Graphs', () => {
                     name: 'Book 3',
                 },
             }
+        });
+    });
+    
+    it('complex graph - {} and default strategy', async() => {
+        const plain = serializer.toPlain(object, {
+            graph: {},
+            defaultStrategy: Strategy.Expose
+        });
+        
+        expect(plain).to.deep.equal({
+            [TypeProp]: 'author',
+            id: 5,
+            name: 'John Doe',
+            age: 18,
+            secret: 12345,
+            books: [
+                {
+                    [TypeProp]: 'book',
+                    id: 8,
+                },
+                {
+                    [TypeProp]: 'book',
+                    id: 9,
+                },
+            ],
+            aliasedBooks: {
+                a: {
+                    [TypeProp]: 'book',
+                    id: 10,
+                },
+            },
         });
     });
     

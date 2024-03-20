@@ -1,16 +1,17 @@
 import { isIterable, isTargetType } from '$/helpers/common.js';
-import type {
-    ExposeDscr,
-    ExposeGraph,
-    ExposeMode,
-    PropertyDefinition,
-    SerializationContext,
-    SerializationOptions,
-    TransformerFn,
-    TransformerFnParams,
-    TypeDefinition,
+import {
+    Direction,
+    type ExposeDscr,
+    type ExposeGraph,
+    type ExposeMode,
+    type PropertyDefinition,
+    type SerializationContext,
+    type SerializationOptions,
+    Strategy,
+    type TransformerFn,
+    type TransformerFnParams,
+    type TypeDefinition,
 } from './def.js';
-import { Direction, Strategy } from './def.js';
 import { Exception, getClassesFromChain } from './helpers/index.js';
 import { MetadataStorage } from './MetadataStorage.js';
 
@@ -81,42 +82,32 @@ export class Serializer
         options : SerializationOptions.ToPlain<T> = {}
     ) : any
     {
-        const context : SerializationContext.ToPlain<T> = {};
+        const context : SerializationContext.ToPlain<T> = {
+            depth: 0,
+            path: '',
+            groups: options.groups ?? [],
+            graph: options.graph,
+            circular: []
+        };
         
         // prepare options
-        if (options.strategy === undefined) {
-            if (options.graph !== undefined) {
-                options.strategy = Strategy.Graph;
-            }
-            else {
-                options.strategy = Strategy.Exclude;
-            }
-        }
-        if (options.excludePrefixes === undefined) {
-            options.excludePrefixes = [];
+        options = {
+            defaultStrategy: Strategy.Exclude,
+            excludePrefixes: [],
+            ...options,
+        };
+        
+        // move type into context
+        if (options.type) {
+            context.type = options.type;
+            delete options.type;
         }
         
-        // prepare context
-        if (context.depth === undefined) {
-            context.depth = 0;
-        }
-        if (context.path === undefined) {
-            context.path = '';
-        }
-        if (context.graph === undefined) {
-            context.graph = options.graph ?? false;
-        }
-        if (context.circular === undefined) {
-            context.circular = [];
-        }
-        
-        // move type and ctxData to context
         if (options.ctxData) {
             context.data = options.ctxData;
             delete options.ctxData;
         }
         
-        context.groups = options.groups ?? [];
         delete options.groups;
         
         return this._toPlain(source, options, context);
@@ -124,8 +115,8 @@ export class Serializer
     
     protected _toPlain<T> (
         source : T,
-        options : SerializationOptions.ToPlain<T> = {},
-        context : SerializationContext.ToPlain<T> = {}
+        options : SerializationOptions.ToPlain<T>,
+        context : SerializationContext.ToPlain<T>
     ) : any
     {
         // check depth limit
@@ -245,10 +236,7 @@ export class Serializer
         }
         
         // catch graph serialization
-        if (
-            options.strategy == Strategy.Graph
-            && context.graph === false
-        ) {
+        if (context.graph === false) {
             return undefined;
         }
         
@@ -314,10 +302,12 @@ export class Serializer
             // collect all suitable props
             const allProps = this._metadataStorage.getAllProperties(type);
             
-            if (context.forceExpose) {
-                // add properties from source
+            // add properties from source
+            const excludeExtraneous = typeDef?.excludeExtraneous ?? true;
+            if (!excludeExtraneous || context.forceExpose) {
                 Object.keys(source)
-                    .forEach(propKey => allProps.add(propKey));
+                    .forEach(propKey => allProps.add(propKey))
+                ;
             }
             
             for (const propKey of allProps) {
@@ -337,6 +327,7 @@ export class Serializer
                 
                 // check should property be exposed
                 const [ exposeMode, exposeDeeply, childGraph ] = this._calcExposition(
+                    typeDef,
                     propKey,
                     propDef,
                     options,
@@ -415,33 +406,23 @@ export class Serializer
     
     public toClass<T> (
         source : any,
-        options : SerializationOptions.ToClass<T> = {},
+        options : SerializationOptions.ToClass<T>,
     ) : T
     {
-        const context : SerializationContext.ToClass<T> = {};
+        const context : SerializationContext.ToClass<T> = {
+            path: '',
+            groups: options.groups ?? [],
+            graph: options.graph,
+        };
         
         // prepare options
-        if (options.strategy === undefined) {
-            if (options.graph !== undefined) {
-                options.strategy = Strategy.Graph;
-            }
-            else {
-                options.strategy = Strategy.Exclude;
-            }
-        }
-        if (options.excludePrefixes === undefined) {
-            options.excludePrefixes = [];
+        options = {
+            defaultStrategy: Strategy.Exclude,
+            excludePrefixes: [],
+            ...options,
         }
         
-        // prepare context
-        if (context.path === undefined) {
-            context.path = '';
-        }
-        if (context.graph === undefined) {
-            context.graph = options.graph ?? false;
-        }
-        
-        // move props to context
+        // move type into context
         if (options.type) {
             if (typeof options.type == 'string') {
                 const type = this._metadataStorage.getTypeByName(options.type);
@@ -464,12 +445,13 @@ export class Serializer
             
             delete options.type;
         }
+        
+        // move ctxData into context
         if (options.ctxData) {
             context.data = options.ctxData;
             delete options.ctxData;
         }
         
-        context.groups = options.groups ?? [];
         delete options.groups;
         
         return this._toClass(source, options, context);
@@ -477,15 +459,12 @@ export class Serializer
     
     protected _toClass<T> (
         source : any,
-        options : SerializationOptions.ToClass<T> = {},
-        context : SerializationContext.ToClass<T> = {}
+        options : SerializationOptions.ToClass<T>,
+        context : SerializationContext.ToClass<T>
     ) : T
     {
         // catch graph serialization
-        if (
-            options.strategy == Strategy.Graph
-            && context.graph === false
-        ) {
+        if (context.graph === false) {
             return undefined;
         }
         
@@ -604,18 +583,20 @@ export class Serializer
         }
         
         // create target instance
-        // const instance = !(type && source instanceof type)
-        const instance = !(source instanceof type)
-            ? new type() // new instance of type
-            : source // use provided instance
+        const instance = (!type || source instanceof type)
+            ? source // use provided instance
+            : new type() // new instance of type
         ;
         
         const allProps = this._metadataStorage.getAllProperties(type);
         
-        if (context.forceExpose) {
-            // add properties from source
+        // add properties from source
+        const excludeExtraneous = typeDef?.excludeExtraneous ?? true;
+        if (!excludeExtraneous || context.forceExpose) {
             Object.keys(source)
-                .forEach(propKey => allProps.add(propKey));
+                .filter(propKey => ![ this._typeProperty ].includes(propKey)) // skip special props
+                .forEach(propKey => allProps.add(propKey))
+            ;
         }
         
         for (const propKey of allProps) {
@@ -635,6 +616,7 @@ export class Serializer
             
             // check should property be exposed
             const [ exposeMode, exposeDeeply, childGraph ] = this._calcExposition(
+                typeDef,
                 propKey,
                 propDef,
                 options,
@@ -701,13 +683,13 @@ export class Serializer
         }
         
         const plain = this.toPlain(source, {
-            strategy: Strategy.Expose,
+            defaultStrategy: Strategy.Expose,
             ...options
         });
         
         return this.toClass(plain, {
             type,
-            strategy: Strategy.Expose,
+            defaultStrategy: Strategy.Expose,
             ...options,
         });
     }
@@ -715,18 +697,22 @@ export class Serializer
     
     
     protected _calcExposition<T> (
+        typeDef : TypeDefinition,
         propKey : PropertyKey,
         propDef : PropertyDefinition,
         options : SerializationOptions.Base<T>,
         context : SerializationContext.Base<T>
     ) : ExpositionCalcResult
     {
-        // exlude prefixes is final
-        if (options.excludePrefixes) {
-            for (const prefix of options.excludePrefixes) {
-                if (propKey.toString().startsWith(prefix)) {
-                    return [ false, false ];
-                }
+        // exclude prefixes is final
+        const excludePrefixes = [
+            ...options.excludePrefixes,
+            ...(typeDef?.excludePrefixes ?? [])
+        ];
+        
+        for (const prefix of excludePrefixes) {
+            if (propKey.toString().startsWith(prefix)) {
+                return [ false, false ];
             }
         }
         
@@ -735,11 +721,15 @@ export class Serializer
             return [ true, true ];
         }
         
-        // use graph
-        if (options.strategy == Strategy.Graph) {
+        const strategy = typeDef?.defaultStrategy ?? options.defaultStrategy;
+        const exposeByDefault = strategy == Strategy.Expose;
+        
+        if (context.graph !== undefined) {
+            // use graph
             return this._calcPropertyExpositionByGraph(
                 context.graph,
                 propKey,
+                exposeByDefault
             );
         }
         else {
@@ -758,13 +748,13 @@ export class Serializer
         }
         
         // if no definition pick by default strategy
-        const defaultStrategy = options.strategy == Strategy.Expose;
-        return [ defaultStrategy, false ];
+        return [ exposeByDefault, false ];
     }
     
     protected _calcPropertyExpositionByGraph (
         graph : ExposeGraph<any>,
-        propKey : PropertyKey
+        propKey : PropertyKey,
+        exposeByDefault : boolean
     ) : ExpositionCalcResult
     {
         if (graph === true || graph === false) {
@@ -777,7 +767,7 @@ export class Serializer
             return [ true, true, '**' ];
         }
         else {
-            const expose = graph[propKey] ?? graph.$default ?? false;
+            const expose = graph[propKey] ?? graph.$default ?? exposeByDefault;
             const deeply = expose === '**';
             return [ !!expose, deeply, expose ];
         }
