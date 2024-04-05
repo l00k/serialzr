@@ -14,3 +14,12 @@ export function isTargetType (obj : any) : obj is TargetType
             obj.type || obj.arrayOf || obj.recordOf
         );
 }
+
+export function isRestrictedAccessor (name : string) : boolean
+{
+    return [
+        'constructor',
+        '__proto__',
+        'prototype',
+    ].includes(name);
+}

@@ -1,3 +1,4 @@
+import { isRestrictedAccessor } from '$/helpers/common.js';
 import type {
     AutoGroupEntry,
     ClassConstructor,
@@ -15,7 +16,7 @@ type TypeDefinitions = Map<any, TypeDefinition>;
 
 type PropertyDefinitions = Map<
     any,
-    Record<
+    Map<
         PropertyKey,
         PropertyDefinition
     >
@@ -131,6 +132,7 @@ export class MetadataStorage
             this._types.set(targetClass, typeDefinition);
             
             // get defined properties from instance
+            this._registerAccessors(targetClass);
             this._registerInstanceProperties(targetClass);
         }
         
@@ -166,12 +168,11 @@ export class MetadataStorage
     }
     
     
-    protected _registerInstanceProperties (targetClass : any)
+    protected _registerAccessors (targetClass : any)
     {
-        // accessors
         const accessors = Object.getOwnPropertyDescriptors(targetClass.prototype);
         for (const [ propKey, descriptor ] of Object.entries(accessors)) {
-            if (propKey === 'constructor') {
+            if (isRestrictedAccessor(propKey)) {
                 continue;
             }
             
@@ -181,7 +182,10 @@ export class MetadataStorage
                 descriptor
             );
         }
-        
+    }
+    
+    protected _registerInstanceProperties (targetClass : any)
+    {
         // instance properties
         try {
             const instance = new targetClass();
@@ -255,12 +259,14 @@ export class MetadataStorage
     {
         let classDefinition = this._properties.get(targetClass);
         if (!classDefinition) {
-            classDefinition = {};
+            classDefinition = new Map();
             this._properties.set(targetClass, classDefinition);
         }
         
-        if (!classDefinition[propKey]) {
-            classDefinition[propKey] = {};
+        let propDef = classDefinition.get(propKey);
+        if (!propDef) {
+            propDef = {};
+            classDefinition.set(propKey, propDef);
         }
         
         // clear cache
@@ -269,7 +275,7 @@ export class MetadataStorage
             this._propertiesCache.delete(targetClass);
         }
         
-        return classDefinition[propKey];
+        return propDef;
     }
     
     
@@ -283,13 +289,14 @@ export class MetadataStorage
             propertiesCache = new Set<PropertyKey>();
             
             // register instance properties
+            this._registerAccessors(targetClass);
             this._registerInstanceProperties(targetClass);
             
             const classes = getClassesFromChain(targetClass);
             for (const singleClass of classes) {
                 const classDefinitions = this._properties.get(singleClass);
                 if (classDefinitions) {
-                    Object.keys(classDefinitions)
+                    [ ...classDefinitions.keys() ]
                         .forEach(propKey => propertiesCache.add(propKey));
                 }
             }
@@ -319,7 +326,7 @@ export class MetadataStorage
                 continue;
             }
             
-            const lvlPropDef = classDefinitions[propKey];
+            const lvlPropDef = classDefinitions.get(propKey);
             if (lvlPropDef) {
                 Object.assign(propDef, lvlPropDef);
             }
