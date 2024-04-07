@@ -20,6 +20,14 @@ prepareSerializerContext('Metadata', () => {
         
         @Srlz.Expose([ 'adminOnly' ])
         public adnotations = 'unchanged';
+        
+        public get getAccessor () { return 2; }
+        
+        public set setAccessor (value : number) {}
+        
+        public propFunc = function () {}
+        
+        public method () {}
     }
     
     class Admin extends Player {}
@@ -47,9 +55,12 @@ prepareSerializerContext('Metadata', () => {
         expect(Array.from(properties)).to.be.eql([
             'name',
             'adnotations',
+            'getAccessor',
+            'setAccessor',
             'id',
             'secret',
             'secret2',
+            'propFunc',
         ]);
     });
     
@@ -83,6 +94,9 @@ prepareSerializerContext('Metadata', () => {
             'secret2',
             'name',
             'adnotations',
+            'propFunc',
+            'getAccessor',
+            'setAccessor',
         ]);
     });
     
@@ -96,9 +110,12 @@ prepareSerializerContext('Metadata', () => {
         expect(Array.from(properties)).to.be.eql([
             'name',
             'adnotations',
+            'getAccessor',
+            'setAccessor',
             'id',
             'secret',
             'secret2',
+            'propFunc',
             'foo',
         ]);
     });

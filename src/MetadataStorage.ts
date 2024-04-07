@@ -172,7 +172,10 @@ export class MetadataStorage
     {
         const accessors = Object.getOwnPropertyDescriptors(targetClass.prototype);
         for (const [ propKey, descriptor ] of Object.entries(accessors)) {
-            if (isRestrictedAccessor(propKey)) {
+            if (
+                isRestrictedAccessor(propKey)
+                || (!descriptor.get && !descriptor.set)
+            ) {
                 continue;
             }
             

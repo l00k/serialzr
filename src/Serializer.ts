@@ -1,17 +1,16 @@
 import { isIterable, isTargetType } from '$/helpers/common.js';
-import {
-    Direction,
-    type ExposeDscr,
-    type ExposeGraph,
-    type ExposeMode,
-    type PropertyDefinition,
-    type SerializationContext,
-    type SerializationOptions,
-    Strategy,
-    type TransformerFn,
-    type TransformerFnParams,
-    type TypeDefinition,
+import type {
+    ExposeDscr,
+    ExposeGraph,
+    ExposeMode,
+    PropertyDefinition,
+    SerializationContext,
+    SerializationOptions,
+    TransformerFn,
+    TransformerFnParams,
+    TypeDefinition,
 } from './def.js';
+import { Direction, Strategy, } from './def.js';
 import { Exception, getClassesFromChain } from './helpers/index.js';
 import { MetadataStorage } from './MetadataStorage.js';
 
@@ -420,7 +419,7 @@ export class Serializer
             defaultStrategy: Strategy.Exclude,
             excludePrefixes: [],
             ...options,
-        }
+        };
         
         // move type into context
         if (options.type) {
@@ -643,7 +642,7 @@ export class Serializer
                 sourceValue = source[propKey]; // override with provided source value
             }
             
-            // serializer inner
+            // deserializer inner
             instance[propKey] = this._toClass(
                 sourceValue,
                 options,
