@@ -341,6 +341,7 @@ export class Serializer
                 // prepare child context
                 const childContext : SerializationContext.ToPlain = {
                     ...context,
+                    type: propDef.type,
                     transformers: propDef.transformers?.toPlain,
                     parent: source,
                     propertyKey: propKey,
@@ -355,10 +356,7 @@ export class Serializer
                 const valueToSet = this._toPlain(
                     source[propKey],
                     options,
-                    {
-                        ...childContext,
-                        type: propDef.type,
-                    }
+                    childContext
                 );
                 
                 if (valueToSet !== undefined) {
@@ -625,6 +623,7 @@ export class Serializer
             // prepare child context
             const childContext : SerializationContext.ToClass = {
                 ...context,
+                type: propDef.type,
                 transformers: propDef.transformers?.toClass,
                 parent: source,
                 propertyKey: propKey,
@@ -634,23 +633,24 @@ export class Serializer
             };
             
             // get proper source value
-            let sourceValue = instance[propKey]; // initially pick instance default value as source
             if (
                 exposeMode // property exposed to changes
                 && source.hasOwnProperty(propKey) // property provided in source
             ) {
-                sourceValue = source[propKey]; // override with provided source value
-            }
-            
-            // deserializer inner
-            instance[propKey] = this._toClass(
-                sourceValue,
-                options,
-                {
-                    ...childContext,
-                    type: propDef.type,
+                // deserializer inner
+                const targetValue = this._toClass(
+                    source[propKey],
+                    options,
+                    childContext
+                );
+                
+                if (propDef.modifiers.initialObjectMerge) {
+                    Object.assign(instance[propKey], targetValue);
                 }
-            );
+                else {
+                    instance[propKey] = targetValue;
+                }
+            }
         }
         
         // transformation after

@@ -3,6 +3,7 @@ import type {
     AutoGroupEntry,
     ClassConstructor,
     ExposeDscr,
+    ModifiersDef,
     PropertyDefinition,
     TargetType,
     Transformers,
@@ -255,6 +256,16 @@ export class MetadataStorage
         Object.assign(propDefiniton.transformers, transformers);
     }
     
+    public registerPropertyModifiers (
+        targetClass : any,
+        propKey : PropertyKey,
+        modifiers : ModifiersDef
+    )
+    {
+        const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
+        propDefiniton.modifiers = modifiers;
+    }
+    
     protected _initPropertyDefinition (
         targetClass : any,
         propKey : PropertyKey
@@ -307,7 +318,7 @@ export class MetadataStorage
             this._propertiesCache.set(targetClass, propertiesCache);
         }
         
-        return propertiesCache;
+        return new Set(propertiesCache.values());
     }
     
     public getPropertyDefinition (
@@ -322,6 +333,7 @@ export class MetadataStorage
             type: undefined,
             exposeDscrs: [],
             transformers: {},
+            modifiers: {},
         };
         for (const singleClass of classes.reverse()) {
             const classDefinitions = this._properties.get(singleClass);

@@ -114,6 +114,11 @@ type _ExposeGraph2<T> = T extends (infer U)[]
 export type ExposeGraph<T> = ExposeGraphFlag | _ExposeGraph2<T>;
 
 
+export type ModifiersDef = {
+    initialObjectMerge? : boolean,
+};
+
+
 // definitions
 export type TypeDefinition = {
     name? : string,
@@ -131,6 +136,7 @@ export type PropertyDefinition = {
     exposeDscrs? : ExposeDscr[],
     type? : TargetType,
     transformers? : Transformers,
+    modifiers? : ModifiersDef,
 }
 
 
