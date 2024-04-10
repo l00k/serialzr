@@ -7,7 +7,9 @@ prepareSerializerContext('ToPlain / Strategy', () => {
     it('no option strategy, type strategy = expose, no prop strategy', () => {
         @Srlz.Type({
             name: 'foo101',
-            defaultStrategy: Strategy.Expose,
+            modifiers: {
+                defaultStrategy: Strategy.Expose,
+            }
         })
         class Foo
         {
@@ -27,7 +29,9 @@ prepareSerializerContext('ToPlain / Strategy', () => {
     it('no option strategy, type strategy = exclude, no prop strategy', () => {
         @Srlz.Type({
             name: 'foo102',
-            defaultStrategy: Strategy.Exclude,
+            modifiers: {
+                defaultStrategy: Strategy.Exclude,
+            }
         })
         class Foo
         {
@@ -46,7 +50,9 @@ prepareSerializerContext('ToPlain / Strategy', () => {
     it('with option strategy, type strategy = expose, no prop strategy', () => {
         @Srlz.Type({
             name: 'foo103',
-            defaultStrategy: Strategy.Expose,
+            modifiers: {
+                defaultStrategy: Strategy.Expose,
+            }
         })
         class Foo
         {
@@ -68,7 +74,9 @@ prepareSerializerContext('ToPlain / Strategy', () => {
     it('with option strategy, type strategy = expose, with prop strategy', () => {
         @Srlz.Type({
             name: 'foo104',
-            defaultStrategy: Strategy.Expose,
+            modifiers: {
+                defaultStrategy: Strategy.Expose,
+            }
         })
         class Foo
         {

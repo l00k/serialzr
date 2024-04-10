@@ -19,6 +19,7 @@ prepareSerializerContext('Metadata', () => {
         public name = null;
         
         @Srlz.Expose([ 'adminOnly' ])
+        @Srlz.Modifiers({ objectMerge: true })
         public adnotations = 'unchanged';
         
         public get getAccessor () { return 2; }
@@ -80,6 +81,7 @@ prepareSerializerContext('Metadata', () => {
             exposeDscrs: [
                 { mode: true },
             ],
+            modifiers: {},
             transformers: {},
             type: undefined,
         });

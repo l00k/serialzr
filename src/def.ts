@@ -114,8 +114,17 @@ type _ExposeGraph2<T> = T extends (infer U)[]
 export type ExposeGraph<T> = ExposeGraphFlag | _ExposeGraph2<T>;
 
 
-export type ModifiersDef = {
-    initialObjectMerge? : boolean,
+// modifiers
+export type TypeModifiers = {
+    excludePrefixes? : string[],
+    excludeExtraneous? : boolean,
+    defaultStrategy? : Strategy,
+    keepInitialValues? : boolean,
+};
+
+export type PropertyModifiers = {
+    objectMerge? : boolean,
+    arrayAppend? : boolean,
 };
 
 
@@ -125,10 +134,7 @@ export type TypeDefinition = {
     idProperty? : PropertyKey,
     autoGroups? : AutoGroupEntry[],
     transformers? : Transformers,
-    
-    excludePrefixes? : string[],
-    excludeExtraneous? : boolean,
-    defaultStrategy? : Strategy,
+    modifiers? : TypeModifiers,
 }
 
 export type PropertyDefinition = {
@@ -136,25 +142,23 @@ export type PropertyDefinition = {
     exposeDscrs? : ExposeDscr[],
     type? : TargetType,
     transformers? : Transformers,
-    modifiers? : ModifiersDef,
+    modifiers? : PropertyModifiers,
 }
 
 
 // transform options
 export namespace SerializationOptions
 {
-    export type Base<T> = {
-        defaultStrategy? : Strategy,
+    export type Base<T> = TypeModifiers & {
         groups? : string[],
         graph? : ExposeGraph<T>,
-        excludePrefixes? : string[],
         ctxData? : Record<any, any>,
     }
     
     export type ToClass<T = any> = Base<T> & {
         type? : TargetType | ClassConstructor<T> | string,
     };
-    export type ToPlain<T = any> = Base<T> & {
+    export type ToPlain<T = any> = Omit<Base<T>, 'keepInitialValues'> & {
         depth? : number,
         type? : Omit<TargetType, 'type'>,
     };

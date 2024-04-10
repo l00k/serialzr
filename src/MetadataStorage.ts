@@ -3,11 +3,11 @@ import type {
     AutoGroupEntry,
     ClassConstructor,
     ExposeDscr,
-    ModifiersDef,
-    PropertyDefinition,
+    PropertyDefinition, PropertyModifiers,
     TargetType,
     Transformers,
-    TypeDefinition
+    TypeDefinition,
+    TypeModifiers
 } from './def.js';
 import { Exception, getClassesFromChain } from './helpers/index.js';
 import * as BuiltInTransformers from './transformers/index.js';
@@ -115,6 +115,15 @@ export class MetadataStorage
         Object.assign(typeDefinition.transformers, transformers);
     }
     
+    public registerTypeModifiers (
+        targetClass : ClassConstructor<any>,
+        modifiers : TypeModifiers
+    )
+    {
+        const typeDefinition = this._initTypeDefinition(targetClass);
+        typeDefinition.modifiers = modifiers;
+    }
+    
     protected _initTypeDefinition (
         targetClass : any
     ) : TypeDefinition
@@ -126,9 +135,12 @@ export class MetadataStorage
                 idProperty: undefined,
                 autoGroups: [],
                 transformers: {},
-                excludePrefixes: [],
-                excludeExtraneous: true,
-                defaultStrategy: undefined,
+                modifiers: {
+                    excludePrefixes: [],
+                    excludeExtraneous: true,
+                    defaultStrategy: undefined,
+                    keepInitialValues: true,
+                }
             };
             this._types.set(targetClass, typeDefinition);
             
@@ -259,7 +271,7 @@ export class MetadataStorage
     public registerPropertyModifiers (
         targetClass : any,
         propKey : PropertyKey,
-        modifiers : ModifiersDef
+        modifiers : PropertyModifiers
     )
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);

@@ -8,7 +8,7 @@ prepareSerializerContext('ToClass / Graphs', () => {
     class Book
     {
         @Srlz.Id()
-        public id : number = 5;
+        public id : number = 4;
         
         public name : string = 'Noname';
         
@@ -50,7 +50,29 @@ prepareSerializerContext('ToClass / Graphs', () => {
     
     const plain = {
         [TypeProp]: 'author',
-        id: 5,
+        id: 6,
+        name: 'Johny Doeee',
+        age: 32,
+        books: [
+            {
+                [TypeProp]: 'book',
+                id: 5,
+                name: 'Aaaa',
+            },
+            {
+                [TypeProp]: 'book',
+                id: 6,
+                name: 'Bbbb',
+            }
+        ],
+        aliasedBooks: {
+            c: {
+                [TypeProp]: 'book',
+                id: 7,
+                name: 'Cccc',
+            }
+        },
+        secret: 54321,
     };
     
     
@@ -60,14 +82,7 @@ prepareSerializerContext('ToClass / Graphs', () => {
         });
         
         expect(object).to.be.instanceof(Author);
-        expect(object).to.deep.equal({
-            id: undefined,
-            name: undefined,
-            age: undefined,
-            books: undefined,
-            aliasedBooks: undefined,
-            secret: undefined,
-        });
+        expect(object).to.deep.eq(new Author());
     });
     
     it('graph = false', async() => {
@@ -85,24 +100,24 @@ prepareSerializerContext('ToClass / Graphs', () => {
 
         expect(object).to.be.instanceof(Author);
         expect(object).to.deep.equal({
-            id: 5,
-            name: 'John Doe',
-            age: 18,
-            secret: 12345,
+            id: 6,
+            name: 'Johny Doeee',
+            age: 32,
+            secret: 54321,
             books: [
                 {
-                    id: undefined,
-                    name: undefined,
+                    id: 4,
+                    name: 'Noname',
                 },
                 {
-                    id: undefined,
-                    name: undefined,
+                    id: 4,
+                    name: 'Noname',
                 },
             ],
             aliasedBooks: {
-                a: {
-                    id: undefined,
-                    name: undefined,
+                c: {
+                    id: 4,
+                    name: 'Noname',
                 },
             }
         });
@@ -114,24 +129,24 @@ prepareSerializerContext('ToClass / Graphs', () => {
         });
 
         expect(object).to.deep.equal({
-            id: 5,
-            name: 'John Doe',
-            age: 18,
-            secret: 12345,
+            id: 6,
+            name: 'Johny Doeee',
+            age: 32,
+            secret: 54321,
             books: [
                 {
-                    id: 8,
-                    name: 'Book 1',
+                    id: 5,
+                    name: 'Aaaa',
                 },
                 {
-                    id: 9,
-                    name: 'Book 2',
+                    id: 6,
+                    name: 'Bbbb',
                 },
             ],
             aliasedBooks: {
-                a: {
-                    id: 10,
-                    name: 'Book 3',
+                c: {
+                    id: 7,
+                    name: 'Cccc',
                 },
             }
         });

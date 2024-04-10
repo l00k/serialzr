@@ -2,10 +2,7 @@ import type { TargetType, TypedClassDecorator, TypeDefinition, TypeFn } from '..
 import { MetadataStorage } from '../MetadataStorage.js';
 
 
-type TypeDefinitionOpts<T> = Partial<Pick<
-    TypeDefinition,
-    'name' | 'excludePrefixes' | 'defaultStrategy'
->> & {
+type TypeDefinitionOpts<T> = Partial<TypeDefinition> & {
     idProperty? : keyof T,
 };
 
@@ -14,7 +11,7 @@ function Type<T> (typeDef : TypeDefinitionOpts<T>) : TypedClassDecorator<T>;
 function Type (targetType : TargetType | TypeFn) : PropertyDecorator;
 
 
-function Type<T> () : ClassDecorator | PropertyDecorator | TypedClassDecorator<T>
+function Type<T> () : PropertyDecorator | TypedClassDecorator<T>
 {
     const decorArguments = arguments;
     

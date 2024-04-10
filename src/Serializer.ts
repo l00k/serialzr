@@ -93,6 +93,7 @@ export class Serializer
         options = {
             defaultStrategy: Strategy.Exclude,
             excludePrefixes: [],
+            excludeExtraneous: true,
             ...options,
         };
         
@@ -302,7 +303,7 @@ export class Serializer
             const allProps = this._metadataStorage.getAllProperties(type);
             
             // add properties from source
-            const excludeExtraneous = typeDef?.excludeExtraneous ?? true;
+            const excludeExtraneous = typeDef?.modifiers.excludeExtraneous ?? options.excludeExtraneous;
             if (!excludeExtraneous || context.forceExpose) {
                 Object.keys(source)
                     .forEach(propKey => allProps.add(propKey))
@@ -416,6 +417,8 @@ export class Serializer
         options = {
             defaultStrategy: Strategy.Exclude,
             excludePrefixes: [],
+            excludeExtraneous: true,
+            keepInitialValues: true,
             ...options,
         };
         
@@ -580,15 +583,27 @@ export class Serializer
         }
         
         // create target instance
-        const instance = (!type || source instanceof type)
-            ? source // use provided instance
-            : new type() // new instance of type
-        ;
+        let instance = null;
+        
+        if (!type || source instanceof type) {
+            // use provided instance
+            instance = source;
+        }
+        else {
+            // new instance of type
+            const keepInitialValues = typeDef?.modifiers.keepInitialValues ?? options.keepInitialValues;
+            if (keepInitialValues) {
+                instance = new type();
+            }
+            else {
+                instance = Object.create(type.prototype);
+            }
+        }
         
         const allProps = this._metadataStorage.getAllProperties(type);
         
         // add properties from source
-        const excludeExtraneous = typeDef?.excludeExtraneous ?? true;
+        const excludeExtraneous = typeDef?.modifiers.excludeExtraneous ?? options.excludeExtraneous;
         if (!excludeExtraneous || context.forceExpose) {
             Object.keys(source)
                 .filter(propKey => ![ this._typeProperty ].includes(propKey)) // skip special props
@@ -644,8 +659,17 @@ export class Serializer
                     childContext
                 );
                 
-                if (propDef.modifiers.initialObjectMerge) {
+                if (
+                    propDef.modifiers.objectMerge
+                    && instance[propKey] instanceof Object
+                ) {
                     Object.assign(instance[propKey], targetValue);
+                }
+                else if (
+                    propDef.modifiers.arrayAppend
+                    && Array.isArray(instance[propKey])
+                ) {
+                    instance[propKey].push(...targetValue);
                 }
                 else {
                     instance[propKey] = targetValue;
@@ -706,7 +730,7 @@ export class Serializer
         // exclude prefixes is final
         const excludePrefixes = [
             ...options.excludePrefixes,
-            ...(typeDef?.excludePrefixes ?? [])
+            ...(typeDef?.modifiers.excludePrefixes ?? [])
         ];
         
         for (const prefix of excludePrefixes) {
@@ -720,7 +744,7 @@ export class Serializer
             return [ true, true ];
         }
         
-        const strategy = typeDef?.defaultStrategy ?? options.defaultStrategy;
+        const strategy = typeDef?.modifiers.defaultStrategy ?? options.defaultStrategy;
         const exposeByDefault = strategy == Strategy.Expose;
         
         if (context.graph !== undefined) {
