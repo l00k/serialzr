@@ -696,7 +696,6 @@ export class Serializer
     }
     
     
-    
     protected _calcExposition<T> (
         typeDef : TypeDefinition,
         propKey : PropertyKey,
