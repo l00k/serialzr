@@ -46,8 +46,10 @@ export class MetadataStorage
     protected _types : TypeDefinitions = new Map();
     protected _typesMap : Record<string, any> = {};
     
-    protected _propertiesCache : Map<any, Set<PropertyKey>> = new Map();
     protected _properties : PropertyDefinitions = new Map();
+    
+    protected _propertiesCache : Map<any, Set<PropertyKey>> = new Map();
+    protected _propertiesDefCache : Map<any, Record<string, PropertyDefinition>> = new Map();
     
     
     public registerType (
@@ -338,6 +340,16 @@ export class MetadataStorage
         propKey : PropertyKey
     ) : PropertyDefinition
     {
+        let classPropDefCache = this._propertiesDefCache.get(targetClass);
+        if (!classPropDefCache) {
+            classPropDefCache = {};
+            this._propertiesDefCache.set(targetClass, classPropDefCache);
+        }
+    
+        if (classPropDefCache[<any>propKey]) {
+            return classPropDefCache[<any>propKey];
+        }
+    
         const classes = getClassesFromChain(targetClass);
         
         const propDef : PropertyDefinition = {
@@ -358,6 +370,8 @@ export class MetadataStorage
                 Object.assign(propDef, lvlPropDef);
             }
         }
+        
+        classPropDefCache[<any>propKey] = propDef;
         
         return propDef;
     }

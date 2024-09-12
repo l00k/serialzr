@@ -695,28 +695,6 @@ export class Serializer
         }
     }
     
-    public clone<T> (
-        source : T,
-        options : SerializationOptions.Base<T> = {}
-    ) : T
-    {
-        const type : any = source?.constructor;
-        if (!type) {
-            return source;
-        }
-        
-        const plain = this.toPlain(source, {
-            defaultStrategy: Strategy.Expose,
-            ...options
-        });
-        
-        return this.toClass(plain, {
-            type,
-            defaultStrategy: Strategy.Expose,
-            ...options,
-        });
-    }
-    
     
     
     protected _calcExposition<T> (

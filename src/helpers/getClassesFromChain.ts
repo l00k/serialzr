@@ -1,5 +1,7 @@
 import { Exception } from './Exception.js';
 
+const cache = new Map();
+
 export function getClassesFromChain (Source : Function) : Function[]
 {
     if ([ null, undefined ].includes(Source)) {
@@ -13,6 +15,10 @@ export function getClassesFromChain (Source : Function) : Function[]
         );
     }
     
+    if (cache.has(Source)) {
+        return cache.get(Source);
+    }
+    
     const collection = [];
     
     let Class = Source;
@@ -22,6 +28,8 @@ export function getClassesFromChain (Source : Function) : Function[]
         const Prototype = Object.getPrototypeOf(Class.prototype);
         Class = Prototype.constructor;
     }
+    
+    cache.set(Source, collection);
     
     return collection;
 }
