@@ -54,11 +54,11 @@ prepareSerializerContext('Metadata', () => {
         const properties = metadataStorage.getAllProperties(Player);
         
         expect(Array.from(properties)).to.be.eql([
+            'id',
             'name',
             'adnotations',
             'getAccessor',
             'setAccessor',
-            'id',
             'secret',
             'secret2',
             'propFunc',
@@ -92,13 +92,13 @@ prepareSerializerContext('Metadata', () => {
         
         expect(Array.from(properties)).to.be.eql([
             'id',
-            'secret',
-            'secret2',
             'name',
             'adnotations',
-            'propFunc',
             'getAccessor',
             'setAccessor',
+            'secret',
+            'secret2',
+            'propFunc',
         ]);
     });
     
@@ -110,11 +110,11 @@ prepareSerializerContext('Metadata', () => {
         const properties = metadataStorage.getAllProperties(Player);
         
         expect(Array.from(properties)).to.be.eql([
+            'id',
             'name',
             'adnotations',
             'getAccessor',
             'setAccessor',
-            'id',
             'secret',
             'secret2',
             'propFunc',

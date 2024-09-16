@@ -321,7 +321,8 @@ export class MetadataStorage
             this._registerInstanceProperties(targetClass);
             
             const classes = getClassesFromChain(targetClass);
-            for (const singleClass of classes) {
+            
+            for (const singleClass of classes.reverse()) {
                 const classDefinitions = this._properties.get(singleClass);
                 if (classDefinitions) {
                     [ ...classDefinitions.keys() ]
