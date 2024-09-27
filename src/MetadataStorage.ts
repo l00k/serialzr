@@ -216,7 +216,9 @@ export class MetadataStorage
                 );
             }
         }
-        catch (e) {}
+        catch (e) {
+            // ignore
+        }
     }
     
     

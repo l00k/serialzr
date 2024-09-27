@@ -53,11 +53,11 @@ function Transformer<T = any> (transformers : Transformers<T>) : any
 }
 
 
-Transformer.ToClass = function <T extends Object = any> (transformer : TransformerDscr<any, T>) : any {
+Transformer.ToClass = function <T extends object = any> (transformer : TransformerDscr<any, T>) : any {
     return Transformer({ toClass: transformer });
 };
 
-Transformer.ToPlain = function <T extends Object = any> (transformer : TransformerDscr<T, any>) : any {
+Transformer.ToPlain = function <T extends object = any> (transformer : TransformerDscr<T, any>) : any {
     return Transformer({ toPlain: transformer });
 };
 

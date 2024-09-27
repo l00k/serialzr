@@ -99,7 +99,7 @@ export type AutoGroupEntry = {
 // expose graph
 export type ExposeGraphFlag = true | false | '*' | '**';
 
-type _ExposeGraph<T> = T extends Object
+type _ExposeGraph<T> = T extends object
     ? { $default? : ExposeGraphFlag } & { [K in keyof T]? : ExposeGraph<T[K]> }
     : never
     ;

@@ -6,25 +6,25 @@ function Exclude () : PropertyDecorator;
 function Exclude (groups : string[]) : PropertyDecorator;
 function Exclude (expose : ExposeDscr) : PropertyDecorator;
 
-function Exclude () : PropertyDecorator
+function Exclude (...args : any[]) : PropertyDecorator
 {
     let expose : ExposeDscr;
     
-    if (arguments.length === 0) {
+    if (args.length === 0) {
         expose = {
             mode: false
         };
     }
-    else if (arguments[0] instanceof Array) {
+    else if (args[0] instanceof Array) {
         expose = {
             mode: false,
-            any: arguments[0],
+            any: args[0],
         };
     }
     else {
         expose = {
             mode: false,
-            ...arguments[0],
+            ...args[0],
         };
     }
     

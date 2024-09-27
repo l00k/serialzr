@@ -28,10 +28,26 @@
         "chai": "^5.1.1",
         "chai-as-promised": "^8.0.0",
         "chai-subset": "^1.6.0",
+        "eslint": "^8.57.1",
+        "eslint-plugin-import": "^2.30.0",
+        "husky": "^9.1.6",
+        "lint-staged": "^15.2.10",
         "mocha": "^10.7.3",
         "ts-patch": "^3.2.1",
         "tsx": "^4.19.1",
         "typescript": "5.5.4",
+        "typescript-eslint": "^8.7.0",
         "typescript-transform-paths": "^3.5.1"
+    },
+    "husky": {
+        "hooks": {
+            "pre-commit": "lint-staged"
+        }
+    },
+    "lint-staged": {
+        "*.{js,jsx,ts,tsx}": [
+            "eslint --fix",
+            "git add"
+        ]
     }
 }

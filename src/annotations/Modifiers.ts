@@ -4,10 +4,8 @@ import type { PropertyModifiers, TypeModifiers } from '../def.js';
 export function Modifiers (modifiers : PropertyModifiers) : PropertyDecorator;
 export function Modifiers (modifiers : TypeModifiers) : ClassDecorator;
 
-export function Modifiers () : ClassDecorator | PropertyDecorator
+export function Modifiers (modifiers : any) : ClassDecorator | PropertyDecorator
 {
-    const [ modifiers ] = arguments;
-    
     return function(target : any, propertyKey : PropertyKey, descriptor? : PropertyDescriptor) {
         const constructor = target.prototype
             ? target

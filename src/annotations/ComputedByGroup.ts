@@ -35,4 +35,4 @@ export function ComputedByGroup (
             }
         })(target, propertyKey, descriptor);
     };
-};
+}

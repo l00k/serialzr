@@ -11,10 +11,8 @@ function Type<T> (typeDef : TypeDefinitionOpts<T>) : TypedClassDecorator<T>;
 function Type (targetType : TargetType | TypeFn) : PropertyDecorator;
 
 
-function Type<T> () : PropertyDecorator | TypedClassDecorator<T>
+function Type<T> (...decorArguments : any[]) : PropertyDecorator | TypedClassDecorator<T>
 {
-    const decorArguments = arguments;
-    
     return function(target : any, propertyKey? : PropertyKey, descriptor? : PropertyDescriptor) {
         const constructor = target.prototype
             ? target

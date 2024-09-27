@@ -281,7 +281,7 @@ export class Serializer
         }
         
         // build plain object
-        let plain : any = {};
+        const plain : any = {};
         
         // add type property
         if (typeDef) {
@@ -650,7 +650,7 @@ export class Serializer
             // get proper source value
             if (
                 exposeMode // property exposed to changes
-                && source.hasOwnProperty(propKey) // property provided in source
+                && Object.hasOwn(source, propKey) // property provided in source
             ) {
                 // deserializer inner
                 const targetValue = this._toClass(
@@ -767,6 +767,8 @@ export class Serializer
             return [ true, true, '**' ];
         }
         else {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
             const expose = graph[propKey] ?? graph.$default ?? exposeByDefault;
             const deeply = expose === '**';
             return [ !!expose, deeply, expose ];

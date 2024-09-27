@@ -6,25 +6,25 @@ function Expose () : PropertyDecorator;
 function Expose (groups : string[]) : PropertyDecorator;
 function Expose (expose : ExposeDscr) : PropertyDecorator;
 
-function Expose () : PropertyDecorator
+function Expose (...args : any[]) : PropertyDecorator
 {
     let expose : ExposeDscr;
     
-    if (arguments.length === 0) {
+    if (args.length === 0) {
         expose = {
             mode: true
         };
     }
-    else if (arguments[0] instanceof Array) {
+    else if (args[0] instanceof Array) {
         expose = {
             mode: true,
-            any: arguments[0],
+            any: args[0],
         };
     }
     else {
         expose = {
             mode: true,
-            ...arguments[0],
+            ...args[0],
         };
     }
     
