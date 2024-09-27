@@ -39,11 +39,6 @@
         "typescript-eslint": "^8.7.0",
         "typescript-transform-paths": "^3.5.1"
     },
-    "husky": {
-        "hooks": {
-            "pre-commit": "lint-staged"
-        }
-    },
     "lint-staged": {
         "*.{js,jsx,ts,tsx}": [
             "eslint --fix",
