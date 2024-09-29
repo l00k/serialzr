@@ -190,6 +190,7 @@ export class MetadataStorage
             if (
                 isRestrictedAccessor(propKey)
                 || (!descriptor.get && !descriptor.set)
+                || !descriptor.enumerable
             ) {
                 continue;
             }
@@ -209,6 +210,10 @@ export class MetadataStorage
             const instance = new targetClass();
             const instanceProps = Object.getOwnPropertyDescriptors(instance);
             for (const [ propKey, descriptor ] of Object.entries(instanceProps)) {
+                if (!descriptor.enumerable) {
+                    continue;
+                }
+            
                 this.registerPropertyDescriptor(
                     targetClass,
                     propKey,
