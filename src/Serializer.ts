@@ -354,11 +354,17 @@ export class Serializer
                 };
                 
                 // serializer inner
-                const valueToSet = this._toPlain(
-                    source[propKey],
-                    options,
-                    childContext
-                );
+                let valueToSet : any;
+                if (propDef.modifiers.forceRaw) {
+                    valueToSet = source[propKey];
+                }
+                else {
+                    valueToSet = this._toPlain(
+                        source[propKey],
+                        options,
+                        childContext
+                    );
+                }
                 
                 if (valueToSet !== undefined) {
                     plain[propKey] = valueToSet;
@@ -653,11 +659,17 @@ export class Serializer
                 && Object.hasOwn(source, propKey) // property provided in source
             ) {
                 // deserializer inner
-                const targetValue = this._toClass(
-                    source[propKey],
-                    options,
-                    childContext
-                );
+                let targetValue : any;
+                if (propDef.modifiers.forceRaw) {
+                    targetValue = source[propKey];
+                }
+                else {
+                    targetValue = this._toClass(
+                        source[propKey],
+                        options,
+                        childContext
+                    );
+                }
                 
                 if (
                     propDef.modifiers.objectMerge

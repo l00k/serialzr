@@ -21,7 +21,8 @@ prepareSerializerContext('To Class / Modifiers', () => {
             };
             
             @Srlz.Modifiers({})
-            public get test () : number {
+            public get test () : number
+            {
                 return 5;
             };
         }
@@ -41,11 +42,11 @@ prepareSerializerContext('To Class / Modifiers', () => {
             expect(obj)
                 .instanceof(Parent)
                 .to.containSubset({
-                    items: {
-                        a: {},
-                        b: {},
-                    }
-                });
+                items: {
+                    a: {},
+                    b: {},
+                }
+            });
             
             expect(obj.items.a)
                 .instanceof(Child)
@@ -89,8 +90,8 @@ prepareSerializerContext('To Class / Modifiers', () => {
             expect(obj)
                 .instanceof(Parent)
                 .to.containSubset({
-                    items: [ {}, {}, ]
-                });
+                items: [ {}, {}, ]
+            });
             
             expect(obj.items[0])
                 .instanceof(Child)
@@ -121,8 +122,46 @@ prepareSerializerContext('To Class / Modifiers', () => {
             
             expect(obj)
                 .instanceof(Parent)
-                .to.deep.equal({
-                });
+                .to.deep.equal({});
+        });
+    });
+    
+    describe('forceRaw', () => {
+        @Srlz.Type('Parent33423')
+        class Parent
+        {
+            @Srlz.Expose()
+            @Srlz.Modifiers({ forceRaw: true })
+            public data : any;
+        }
+        
+        it('Should ignore futher serialization', () => {
+            const plain : any = {
+                data: {
+                    '@type': 'Parent33423',
+                    sample: 5,
+                    deeper: {
+                        '@type': 'Parent33423',
+                        sample: 7,
+                    }
+                }
+            };
+            
+            const obj = serializer.toClass(plain, {
+                type: Parent
+            });
+            
+            expect(obj).instanceof(Parent);
+            expect(obj).to.deep.equal({
+                data: {
+                    '@type': 'Parent33423',
+                    sample: 5,
+                    deeper: {
+                        '@type': 'Parent33423',
+                        sample: 7,
+                    }
+                }
+            });
         });
     });
 });

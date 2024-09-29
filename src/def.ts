@@ -123,6 +123,7 @@ export type TypeModifiers = {
 };
 
 export type PropertyModifiers = {
+    forceRaw? : boolean,
     objectMerge? : boolean,
     arrayAppend? : boolean,
 };
@@ -171,6 +172,7 @@ export namespace SerializationContext
     export type Base<T> = {
         type? : TargetType,
         transformers? : TransformerDscr,
+        propModifiers? : PropertyModifiers,
         forceExpose? : boolean,
         groups? : string[],
         parent? : any,
