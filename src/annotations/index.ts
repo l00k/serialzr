@@ -1,6 +1,6 @@
 export * from './AutoGroup.js';
 export * from './Computed.js';
-export * from './ComputedByGroup.js';
+export * from './ComputedByGroups.js';
 export * from './Exclude.js';
 export * from './Expose.js';
 export * from './Id.js';

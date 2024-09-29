@@ -1,8 +1,8 @@
 import type { ComputedGetterFn, TransformerFnParams } from '../def.js';
 import { Transformer } from './Transformer.js';
 
-export function ComputedByGroup (
-    group : string,
+export function ComputedByGroups (
+    groups : string[],
     ifIncludesFn : ComputedGetterFn = () => true,
     ifNotIncludesFn : ComputedGetterFn = () => false,
 ) : PropertyDecorator
@@ -14,9 +14,10 @@ export function ComputedByGroup (
                     return [ value, true ]; // already defined
                 }
                 
-                let computed : any = undefined;
+                const includesGroup : boolean = groups.some(g => params.context.groups.includes(g));
                 
-                if (params.context.groups.includes(group)) {
+                let computed : any = undefined;
+                if (includesGroup) {
                     computed = ifIncludesFn({
                         value,
                         parent: params.context.parent,

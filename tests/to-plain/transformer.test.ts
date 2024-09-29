@@ -178,7 +178,7 @@ prepareSerializerContext('ToPlain / Transformers', () => {
             public id : number = 1;
             
             @Srlz.Expose()
-            @Srlz.ComputedByGroup('group1')
+            @Srlz.ComputedByGroups([ 'group1' ])
             public computed : boolean;
             
         }
