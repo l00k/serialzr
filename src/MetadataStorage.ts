@@ -139,9 +139,9 @@ export class MetadataStorage
                 transformers: {},
                 modifiers: {
                     excludePrefixes: [],
-                    excludeExtraneous: true,
+                    excludeExtraneous: undefined,
                     defaultStrategy: undefined,
-                    keepInitialValues: true,
+                    keepInitialValues: undefined,
                 }
             };
             this._types.set(targetClass, typeDefinition);
