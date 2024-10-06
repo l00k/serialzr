@@ -24,6 +24,24 @@ prepareSerializerContext('ToClass / Built-in types', () => {
             expected: true
         },
         {
+            name: 'false typed',
+            type: Boolean,
+            value: 'false',
+            expected: false
+        },
+        {
+            name: 'true typed',
+            type: Boolean,
+            value: 'true',
+            expected: true
+        },
+        {
+            name: 'true typed',
+            type: Boolean,
+            value: 0,
+            expected: false
+        },
+        {
             name: 'number 0',
             value: 0,
             expected: 0
@@ -31,6 +49,12 @@ prepareSerializerContext('ToClass / Built-in types', () => {
         {
             name: 'number 123',
             value: 123,
+            expected: 123
+        },
+        {
+            name: 'number typed',
+            type: Number,
+            value: '123',
             expected: 123
         },
         {

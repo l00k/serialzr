@@ -1,5 +1,5 @@
 import { isIterable, isTargetType } from '$/helpers/common.js';
-import type {
+import type { ClassConstructor ,
     ExposeDscr,
     ExposeGraph,
     ExposeMode,
@@ -269,8 +269,11 @@ export class Serializer
         }
         
         // built in types
-        if ([ undefined, null, Boolean, Number, String, BigInt, Date ].includes(type)) {
+        if ([ undefined, null ].includes(type)) {
             return <any>source;
+        }
+        if ([ Boolean, Number, String, Date, BigInt ].includes(type)) {
+            return this._transformBuiltIn(type, source);
         }
         
         // verify source type
@@ -577,8 +580,11 @@ export class Serializer
         }
         
         // built in types
-        if ([ undefined, null, Boolean, Number, String, BigInt, Date ].includes(type)) {
+        if ([ undefined, null ].includes(type)) {
             return <any>source;
+        }
+        if ([ Boolean, Number, String, Date, BigInt ].includes(type)) {
+            return this._transformBuiltIn(type, source);
         }
         
         // verify source type
@@ -905,6 +911,42 @@ export class Serializer
         }
         
         return null;
+    }
+    
+    protected _transformBuiltIn (
+        type : ClassConstructor<any>,
+        source : any,
+    ) : any
+    {
+        if (type == Boolean) {
+            if (typeof source == 'boolean') {
+                return source;
+            }
+            else if (typeof source == 'string') {
+                return source == 'true';
+            }
+            return !!source;
+        }
+        else if (type == Number) {
+            if (typeof source == 'number') {
+                return source;
+            }
+            return Number(source);
+        }
+        else if (type == String) {
+            if (typeof source == 'string') {
+                return source;
+            }
+            return String(source);
+        }
+        else if (type == Date) {
+            return new Date(source);
+        }
+        else if (type == <any>BigInt) {
+            return BigInt(source);
+        }
+        
+        return undefined;
     }
     
 }
