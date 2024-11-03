@@ -18,6 +18,7 @@ prepareSerializerContext('To Play / Modifiers', () => {
                 '@type': 'Parent33423',
                 sample: 5,
                 deeper: new Parent(),
+                complex: [ 1, 2, null, undefined, 'string' ],
             };
             object.data.deeper.data = {
                 '@type': 'Parent33423',
@@ -36,7 +37,8 @@ prepareSerializerContext('To Play / Modifiers', () => {
                             '@type': 'Parent33423',
                             sample: 7,
                         }
-                    }
+                    },
+                    complex: [ 1, 2, null, undefined, 'string' ],
                 }
             });
         });

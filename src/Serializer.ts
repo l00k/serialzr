@@ -342,26 +342,26 @@ export class Serializer
                     continue;
                 }
                 
-                // prepare child context
-                const childContext : SerializationContext.ToPlain = {
-                    ...context,
-                    type: propDef.type,
-                    transformers: propDef.transformers?.toPlain,
-                    parent: source,
-                    propertyKey: propKey,
-                    path,
-                    depth: propDepth,
-                    circular: [ ...context.circular, source ],
-                    graph: childGraph,
-                    forceExpose: context.forceExpose ?? exposeDeeply,
-                };
-                
                 // serializer inner
                 let valueToSet : any;
                 if (propDef.modifiers.forceRaw) {
                     valueToSet = source[propKey];
                 }
                 else {
+                    // prepare child context
+                    const childContext : SerializationContext.ToPlain = {
+                        ...context,
+                        type: propDef.type,
+                        transformers: propDef.transformers?.toPlain,
+                        parent: source,
+                        propertyKey: propKey,
+                        path,
+                        depth: propDepth,
+                        circular: [ ...context.circular, source ],
+                        graph: childGraph,
+                        forceExpose: context.forceExpose ?? exposeDeeply,
+                    };
+                    
                     valueToSet = this._toPlain(
                         source[propKey],
                         options,
@@ -647,18 +647,6 @@ export class Serializer
                 context
             );
             
-            // prepare child context
-            const childContext : SerializationContext.ToClass = {
-                ...context,
-                type: propDef.type,
-                transformers: propDef.transformers?.toClass,
-                parent: source,
-                propertyKey: propKey,
-                path,
-                graph: childGraph,
-                forceExpose: context.forceExpose ?? exposeDeeply,
-            };
-            
             // get proper source value
             if (
                 exposeMode // property exposed to changes
@@ -670,6 +658,18 @@ export class Serializer
                     targetValue = source[propKey];
                 }
                 else {
+                    // prepare child context
+                    const childContext : SerializationContext.ToClass = {
+                        ...context,
+                        type: propDef.type,
+                        transformers: propDef.transformers?.toClass,
+                        parent: source,
+                        propertyKey: propKey,
+                        path,
+                        graph: childGraph,
+                        forceExpose: context.forceExpose ?? exposeDeeply,
+                    };
+                    
                     targetValue = this._toClass(
                         source[propKey],
                         options,

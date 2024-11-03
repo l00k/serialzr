@@ -143,7 +143,8 @@ prepareSerializerContext('To Class / Modifiers', () => {
                     deeper: {
                         '@type': 'Parent33423',
                         sample: 7,
-                    }
+                    },
+                    complex: [ 1, 2, null, undefined, 'string' ],
                 }
             };
             
@@ -159,7 +160,8 @@ prepareSerializerContext('To Class / Modifiers', () => {
                     deeper: {
                         '@type': 'Parent33423',
                         sample: 7,
-                    }
+                    },
+                    complex: [ 1, 2, null, undefined, 'string' ],
                 }
             });
         });
