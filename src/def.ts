@@ -28,6 +28,13 @@ export enum Strategy
     Exclude = 'exclude',
 }
 
+export type IdType = number | string;
+
+export type ParsedObjectLink = {
+    type : ClassConstructor<any>,
+    id : IdType,
+};
+
 
 // transformers
 export type TransformerFnParams<T = any> = {

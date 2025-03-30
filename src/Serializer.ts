@@ -1,8 +1,10 @@
 import { isIterable, isTargetType } from '$/helpers/common.js';
-import type { ClassConstructor ,
+import type {
+    ClassConstructor,
     ExposeDscr,
     ExposeGraph,
     ExposeMode,
+    ParsedObjectLink,
     PropertyDefinition,
     SerializationContext,
     SerializationOptions,
@@ -17,6 +19,8 @@ import { MetadataStorage } from './MetadataStorage.js';
 
 type Options = {
     typeProperty? : string;
+    objectLinkProperty? : string,
+    useObjectLink? : boolean,
 }
 
 type ExpositionCalcResult = [ ExposeMode, boolean, ExposeGraph<any>? ];
@@ -28,7 +32,9 @@ export class Serializer
     protected _metadataStorage : MetadataStorage = MetadataStorage.getSingleton();
     
     protected _typeProperty : string = '@type';
+    protected _objectLinkProperty : string = '@id';
     
+    protected _useObjectLink : boolean = false;
     protected _initiated : boolean = false;
     
     
@@ -41,8 +47,16 @@ export class Serializer
             );
         }
         
-        if (options.typeProperty) {
+        if ('typeProperty' in options) {
             this._typeProperty = options.typeProperty;
+        }
+        
+        if ('objectLinkProperty' in options) {
+            this._objectLinkProperty = options.objectLinkProperty;
+        }
+        
+        if ('useObjectLink' in options) {
+            this._useObjectLink = options.useObjectLink;
         }
         
         this._initiated = true;
@@ -73,6 +87,87 @@ export class Serializer
         }
         
         return type;
+    }
+    
+    
+    public buildObjectLink (
+        source : any,
+        type? : ClassConstructor<any>,
+    ) : string
+    {
+        if (!type) {
+            type = source.constructor;
+        }
+        
+        const typeDef = this._metadataStorage.getTypeDefinition(type);
+        if (!typeDef) {
+            throw new Exception(
+                'Unknown type: ' + type.name,
+                1743359920074
+            );
+        }
+        
+        return this._buildObjectLink(
+            source,
+            typeDef,
+            false,
+        );
+    }
+    
+    public parseObjectLink (objectLink : string) : ParsedObjectLink
+    {
+        if (!objectLink.startsWith('@/')) {
+            throw new Exception(
+                'Wrong format of object link',
+                1743360099255
+            );
+        }
+        
+        objectLink = objectLink.substring(2);
+        
+        const lastSlashIdx = objectLink.lastIndexOf('/');
+        const typeName = objectLink.substring(0, lastSlashIdx);
+        const idRaw = objectLink.substring(lastSlashIdx + 1);
+        
+        const type = this.getTypeByName(typeName);
+        if (!type) {
+            throw new Exception(
+                'Unknown type: ' + type.name,
+                1743360231473
+            );
+        }
+        
+        const typeDef = this._metadataStorage.getTypeDefinition(type);
+        if (!typeDef) {
+            throw new Exception(
+                'Unknown type: ' + type.name,
+                1743360244832
+            );
+        }
+        
+        const idPropName = typeDef.idProperty;
+        if (!idPropName) {
+            throw new Exception(
+                'There is no defined property for type: ' + type.name,
+                1743360388303
+            );
+        }
+        
+        const idPropTypeDef = this._metadataStorage.getPropertyDefinition(type, idPropName);
+        const idPropType = idPropTypeDef.type?.type
+            ? idPropTypeDef.type?.type()
+            : String
+        ;
+        
+        const id = idPropType == Number
+            ? Number(idRaw)
+            : idRaw
+        ;
+        
+        return {
+            type,
+            id,
+        };
     }
     
     
@@ -264,7 +359,7 @@ export class Serializer
         }
         
         // trivial values
-        if ([ undefined, null ].includes(source)) {
+        if ([ undefined, null ].includes(<any>source)) {
             return <any>source;
         }
         
@@ -278,9 +373,18 @@ export class Serializer
         
         // verify source type
         if (!(source instanceof Object)) {
-            // at this stage non object types could not be transformed
-            // transformer may be required to handle this case
-            return undefined;
+            if (typeDef) {
+                // at this stage non object types are considered as ID value
+                return this._buildObjectLink(
+                    { [typeDef.idProperty]: source },
+                    typeDef,
+                );
+            }
+            else {
+                // no info how to transform entry
+                // transformer may be required to handle this case
+                return undefined;
+            }
         }
         
         // build plain object
@@ -290,6 +394,12 @@ export class Serializer
         if (typeDef) {
             if (typeDef.name) {
                 plain[this._typeProperty] = typeDef.name;
+            }
+            if (this._useObjectLink) {
+                plain[this._objectLinkProperty] = this._buildObjectLink(
+                    source,
+                    typeDef,
+                );
             }
             if (typeDef.idProperty) {
                 plain[typeDef.idProperty] = source[typeDef.idProperty];
@@ -911,6 +1021,28 @@ export class Serializer
         }
         
         return null;
+    }
+    
+    protected _buildObjectLink (
+        source : any,
+        typeDef : TypeDefinition,
+        allowBlank : boolean = true,
+    ) : string
+    {
+        const id = source[typeDef.idProperty];
+        if (id === undefined) {
+            if (allowBlank) {
+                return undefined;
+            }
+            else {
+                throw new Exception(
+                    'Id value not specified',
+                    1743360679287
+                );
+            }
+        }
+    
+        return '@/' + typeDef.name + '/' + id;
     }
     
     protected _transformBuiltIn (

@@ -3,21 +3,20 @@ import { Srlz, serializer } from '$/index.js';
 
 
 prepareSerializerContext('Basics', () => {
-    after(() => {
-        serializer['_initiated'] = false;
-        serializer.init();
-    });
-    
     @Srlz.Type('sample')
     class Foo {}
     
-    it('should assign type property', () => {
+    it('should assign config based on passed options', () => {
         serializer['_initiated'] = false;
         serializer.init({
-            typeProperty: '@type'
+            typeProperty: '@typee',
+            objectLinkProperty: '@idd',
+            useObjectLink: true,
         });
         
-        expect(serializer['_typeProperty']).to.be.equal('@type');
+        expect(serializer['_typeProperty']).to.be.equal('@typee');
+        expect(serializer['_objectLinkProperty']).to.be.equal('@idd');
+        expect(serializer['_useObjectLink']).to.be.equal(true);
     });
     
     it('should not be able to init twice', () => {
