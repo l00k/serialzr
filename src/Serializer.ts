@@ -508,6 +508,10 @@ export class Serializer
         typeDef : TypeDefinition
     ) : any
     {
+        if (this._useObjectLink) {
+            return this._buildObjectLink(source, typeDef);
+        }
+        
         const plain : any = {};
         
         if (typeDef.name) {
@@ -699,9 +703,29 @@ export class Serializer
         
         // verify source type
         if (!(source instanceof Object)) {
-            // at this stage non object types could not be transformed
-            // transformer may be required to handle this case
-            return undefined;
+            if (
+                typeDef
+                && this._useObjectLink
+            ) {
+                // at this stage non object types are considered as object link
+                try {
+                    const parsedObjectLink = this.parseObjectLink(source);
+                
+                    const object = new parsedObjectLink.type();
+                    object[typeDef.idProperty] = parsedObjectLink.id;
+                    
+                    return object;
+                }
+                catch (e) {
+                    // unable to parse object link
+                    return undefined;
+                }
+            }
+            else {
+                // no info how to transform entry
+                // transformer may be required to handle this case
+                return undefined;
+            }
         }
         
         // create target instance
