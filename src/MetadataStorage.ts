@@ -7,10 +7,11 @@ import type {
     TargetType,
     Transformers,
     TypeDefinition,
-    TypeModifiers
+    TypeModifiers,
 } from './def.js';
 import { Exception, getClassesFromChain } from './helpers/index.js';
 import * as BuiltInTransformers from './transformers/index.js';
+import clone from 'clone';
 
 
 type TypeDefinitions = Map<any, TypeDefinition>;
@@ -54,33 +55,28 @@ export class MetadataStorage
     
     public registerType (
         targetClass : any,
-        typeDef : TypeDefinition
-    )
+        typeDef : TypeDefinition,
+    ) : void
     {
         // try to aquire type name from parent class
         if (!typeDef.name) {
-            let typeName = null;
+            let typeName = '';
             
-            const parentClasses = getClassesFromChain(targetClass);
-            for (const parentClass of parentClasses) {
-                const parentTypeDef = this._types.get(parentClass);
+            const parentClasses = getClassesFromChain(targetClass, true);
+            if (parentClasses.length) {
+                const parentTypeDef = this._types.get(parentClasses[0]);
                 if (parentTypeDef?.name) {
-                    typeName = parentTypeDef.name + '/' + targetClass.name;
-                    break;
+                    typeName = parentTypeDef.name;
                 }
             }
             
-            if (!typeName) {
-                typeName = targetClass.name;
-            }
-            
-            typeDef.name = typeName;
+            typeDef.name = typeName + (typeName ? '/' : '') + targetClass.name;
         }
         
         if (this._typesMap[typeDef.name]) {
             throw new Exception(
                 `Type with name "${typeDef.name}" already registered`,
-                1709649278876
+                1709649278876,
             );
         }
         
@@ -92,8 +88,8 @@ export class MetadataStorage
     
     public registerIdProperty (
         targetClass : any,
-        propertyKey : PropertyKey
-    )
+        propertyKey : PropertyKey,
+    ) : void
     {
         const typeDefinition = this._initTypeDefinition(targetClass);
         typeDefinition.idProperty = propertyKey;
@@ -101,8 +97,8 @@ export class MetadataStorage
     
     public registerAutoGroupFn (
         targetClass : any,
-        autoGroupEntry : AutoGroupEntry
-    )
+        autoGroupEntry : AutoGroupEntry,
+    ) : void
     {
         const typeDefinition = this._initTypeDefinition(targetClass);
         typeDefinition.autoGroups.push(autoGroupEntry);
@@ -110,8 +106,8 @@ export class MetadataStorage
     
     public registerTypeTransformers<T = any> (
         targetClass : ClassConstructor<T>,
-        transformers : Transformers<T>
-    )
+        transformers : Transformers<T>,
+    ) : void
     {
         const typeDefinition = this._initTypeDefinition(targetClass);
         Object.assign(typeDefinition.transformers, transformers);
@@ -119,31 +115,43 @@ export class MetadataStorage
     
     public registerTypeModifiers (
         targetClass : ClassConstructor<any>,
-        modifiers : TypeModifiers
-    )
+        modifiers : TypeModifiers,
+    ) : void
     {
         const typeDefinition = this._initTypeDefinition(targetClass);
         typeDefinition.modifiers = modifiers;
     }
     
     protected _initTypeDefinition (
-        targetClass : any
+        targetClass : any,
     ) : TypeDefinition
     {
         let typeDefinition = this._types.get(targetClass);
         if (!typeDefinition) {
-            typeDefinition = {
-                name: undefined,
-                idProperty: undefined,
-                autoGroups: [],
-                transformers: {},
-                modifiers: {
-                    excludePrefixes: [],
-                    excludeExtraneous: undefined,
-                    defaultStrategy: undefined,
-                    keepInitialValues: undefined,
+            const parentClasses = getClassesFromChain(targetClass, true);
+            if (parentClasses[0]) {
+                const parentTypeDef = this._types.get(parentClasses[0]);
+                if (parentTypeDef) {
+                    typeDefinition = clone(parentTypeDef);
+                    typeDefinition.name = undefined;
                 }
-            };
+            }
+            
+            if (!typeDefinition) {
+                typeDefinition = {
+                    name: undefined,
+                    idProperty: undefined,
+                    autoGroups: [],
+                    transformers: {},
+                    modifiers: {
+                        excludePrefixes: [],
+                        excludeExtraneous: undefined,
+                        defaultStrategy: undefined,
+                        keepInitialValues: undefined,
+                    },
+                };
+            }
+            
             this._types.set(targetClass, typeDefinition);
             
             // get defined properties from instance
@@ -155,35 +163,21 @@ export class MetadataStorage
     }
     
     public getTypeDefinition (
-        targetClass : any
+        targetClass : any,
     ) : TypeDefinition
     {
-        const classes = getClassesFromChain(targetClass);
-        
-        let typeDef = null;
-        for (const klass of classes.reverse()) {
-            const klassTypeDef = this._types.get(klass);
-            if (klassTypeDef) {
-                if (!typeDef) {
-                    typeDef = {};
-                }
-                
-                Object.assign(typeDef, klassTypeDef);
-            }
-        }
-        
-        return typeDef;
+        return this._types.get(targetClass);
     }
     
     public getTypeByName (
-        typeName : string
+        typeName : string,
     ) : any
     {
         return this._typesMap[typeName];
     }
     
     
-    protected _registerAccessors (targetClass : any)
+    protected _registerAccessors (targetClass : any) : void
     {
         const accessors = Object.getOwnPropertyDescriptors(targetClass.prototype);
         for (const [ propKey, descriptor ] of Object.entries(accessors)) {
@@ -198,12 +192,12 @@ export class MetadataStorage
             this.registerPropertyDescriptor(
                 targetClass,
                 propKey,
-                descriptor
+                descriptor,
             );
         }
     }
     
-    protected _registerInstanceProperties (targetClass : any)
+    protected _registerInstanceProperties (targetClass : any) : void
     {
         // instance properties
         try {
@@ -217,7 +211,7 @@ export class MetadataStorage
                 this.registerPropertyDescriptor(
                     targetClass,
                     propKey,
-                    descriptor
+                    descriptor,
                 );
             }
         }
@@ -230,8 +224,8 @@ export class MetadataStorage
     public registerPropertyDescriptor (
         targetClass : any,
         propKey : PropertyKey,
-        descriptor : PropertyDescriptor
-    )
+        descriptor : PropertyDescriptor,
+    ) : void
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
         propDefiniton.descriptor = descriptor;
@@ -240,8 +234,8 @@ export class MetadataStorage
     public registerPropertyExpose (
         targetClass : any,
         propKey : PropertyKey,
-        exposeDscr : ExposeDscr
-    )
+        exposeDscr : ExposeDscr,
+    ) : void
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
         
@@ -255,8 +249,8 @@ export class MetadataStorage
     public registerPropertyType (
         targetClass : any,
         propKey : PropertyKey,
-        type : TargetType
-    )
+        type : TargetType,
+    ) : void
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
         propDefiniton.type = type;
@@ -265,8 +259,8 @@ export class MetadataStorage
     public registerPropertyTransformers (
         targetClass : any,
         propKey : PropertyKey,
-        transformers : Transformers
-    )
+        transformers : Transformers,
+    ) : void
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
         
@@ -280,8 +274,8 @@ export class MetadataStorage
     public registerPropertyModifiers (
         targetClass : any,
         propKey : PropertyKey,
-        modifiers : PropertyModifiers
-    )
+        modifiers : PropertyModifiers,
+    ) : void
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
         propDefiniton.modifiers = modifiers;
@@ -289,7 +283,7 @@ export class MetadataStorage
     
     protected _initPropertyDefinition (
         targetClass : any,
-        propKey : PropertyKey
+        propKey : PropertyKey,
     ) : PropertyDefinition
     {
         let classDefinition = this._properties.get(targetClass);
@@ -316,7 +310,7 @@ export class MetadataStorage
     
     
     public getAllProperties (
-        targetClass : any
+        targetClass : any,
     ) : Set<PropertyKey>
     {
         let propertiesCache = this._propertiesCache.get(targetClass);
@@ -345,7 +339,7 @@ export class MetadataStorage
     
     public getPropertyDefinition (
         targetClass : any,
-        propKey : PropertyKey
+        propKey : PropertyKey,
     ) : PropertyDefinition
     {
         let classPropDefCache = this._propertiesDefCache.get(targetClass);
