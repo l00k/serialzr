@@ -1,4 +1,5 @@
 import { isIterable, isTargetType } from '$/helpers/common.js';
+import { Direction, Strategy, TransformStage } from './def.js';
 import type {
     ClassConstructor,
     ExposeDscr,
@@ -8,13 +9,11 @@ import type {
     PropertyDefinition,
     SerializationContext,
     SerializationOptions,
-    TransformerFn,
-    TransformerFnParams,
+    TransformationResult,
     TypeDefinition,
 } from './def.js';
-import { Direction, Strategy, } from './def.js';
 import { Exception, getClassesFromChain } from './helpers/index.js';
-import { MetadataStorage } from './MetadataStorage.js';
+import { Registry } from './Registry.js';
 
 
 type Options = {
@@ -29,7 +28,7 @@ type ExpositionCalcResult = [ ExposeMode, boolean, ExposeGraph<any>? ];
 export class Serializer
 {
     
-    protected _metadataStorage : MetadataStorage = MetadataStorage.getSingleton();
+    protected _registry : Registry = Registry.getSingleton();
     
     protected _typeProperty : string = '@type';
     protected _objectLinkProperty : string = '@id';
@@ -38,12 +37,12 @@ export class Serializer
     protected _initiated : boolean = false;
     
     
-    public init (options : Options = {})
+    public init (options : Options = {}) : void
     {
         if (this._initiated) {
             throw new Exception(
                 'Serializer already initiated',
-                1709577709189
+                1709577709189,
             );
         }
         
@@ -65,11 +64,11 @@ export class Serializer
     
     public getTypeName (type : any) : any
     {
-        const typeDef = this._metadataStorage.getTypeDefinition(type);
+        const typeDef = this._registry.getTypeDefinition(type);
         if (!typeDef) {
             throw new Exception(
                 'Unknown type: ' + type.name,
-                1710478992800
+                1710478992800,
             );
         }
         
@@ -78,11 +77,11 @@ export class Serializer
     
     public getTypeByName (typeName : string) : any
     {
-        const type = this._metadataStorage.getTypeByName(typeName);
+        const type = this._registry.getTypeByName(typeName);
         if (!type) {
             throw new Exception(
                 'Unknown type name: ' + typeName,
-                1710479570120
+                1710479570120,
             );
         }
         
@@ -99,11 +98,11 @@ export class Serializer
             type = source.constructor;
         }
         
-        const typeDef = this._metadataStorage.getTypeDefinition(type);
+        const typeDef = this._registry.getTypeDefinition(type);
         if (!typeDef) {
             throw new Exception(
                 'Unknown type: ' + type.name,
-                1743359920074
+                1743359920074,
             );
         }
         
@@ -119,7 +118,7 @@ export class Serializer
         if (!objectLink.startsWith('@/')) {
             throw new Exception(
                 'Wrong format of object link',
-                1743360099255
+                1743360099255,
             );
         }
         
@@ -133,15 +132,15 @@ export class Serializer
         if (!type) {
             throw new Exception(
                 'Unknown type: ' + type.name,
-                1743360231473
+                1743360231473,
             );
         }
         
-        const typeDef = this._metadataStorage.getTypeDefinition(type);
+        const typeDef = this._registry.getTypeDefinition(type);
         if (!typeDef) {
             throw new Exception(
                 'Unknown type: ' + type.name,
-                1743360244832
+                1743360244832,
             );
         }
         
@@ -149,11 +148,11 @@ export class Serializer
         if (!idPropName) {
             throw new Exception(
                 'There is no defined property for type: ' + type.name,
-                1743360388303
+                1743360388303,
             );
         }
         
-        const idPropTypeDef = this._metadataStorage.getPropertyDefinition(type, idPropName);
+        const idPropTypeDef = this._registry.getPropertyDefinition(type, idPropName);
         const idPropType = idPropTypeDef.type?.type
             ? idPropTypeDef.type?.type()
             : String
@@ -171,9 +170,9 @@ export class Serializer
     }
     
     
-    public toPlain<T> (
+    public serialize<T> (
         source : T,
-        options : SerializationOptions.ToPlain<T> = {}
+        options : SerializationOptions.ToPlain<T> = {},
     ) : any
     {
         const context : SerializationContext.ToPlain<T> = {
@@ -181,7 +180,7 @@ export class Serializer
             path: '',
             groups: options.groups ?? [],
             graph: options.graph,
-            circular: []
+            circular: [],
         };
         
         // prepare options
@@ -205,13 +204,13 @@ export class Serializer
         
         delete options.groups;
         
-        return this._toPlain(source, options, context);
+        return this._serialize(source, options, context);
     }
     
-    protected _toPlain<T> (
+    protected _serialize<T> (
         source : T,
         options : SerializationOptions.ToPlain<T>,
-        context : SerializationContext.ToPlain<T>
+        context : SerializationContext.ToPlain<T>,
     ) : any
     {
         // check depth limit
@@ -239,7 +238,7 @@ export class Serializer
                 const array : any = [];
                 for (const [ idx, itemRaw ] of Object.entries(source)) {
                     const path = (context.path ? context.path + '.' : '') + idx;
-                    const item = this._toPlain<any>(itemRaw, options, {
+                    const item = this._serialize<any>(itemRaw, options, {
                         ...context,
                         type: { type: context.type.arrayOf },
                         path,
@@ -261,7 +260,7 @@ export class Serializer
                 const record : any = {};
                 for (const [ propKey, itemRaw ] of Object.entries(source)) {
                     const path = (context.path ? context.path + '.' : '') + propKey;
-                    const item = this._toPlain<any>(itemRaw, options, {
+                    const item = this._serialize<any>(itemRaw, options, {
                         ...context,
                         type: { type: context.type.recordOf },
                         path: path,
@@ -302,14 +301,14 @@ export class Serializer
         
         // get type definition
         const typeDef = type
-            ? this._metadataStorage.getTypeDefinition(type)
+            ? this._registry.getTypeDefinition(type)
             : null
         ;
         
         // catch circular dependencies
         if (context.circular.includes(source)) {
             if (typeDef) {
-                return this._toPlainCircular(source, typeDef);
+                return this._serializeCircular(source, typeDef);
             }
             else {
                 return undefined;
@@ -335,26 +334,38 @@ export class Serializer
             return undefined;
         }
         
-        // transformation before
-        {
-            const [ value, final ] = this._transform(
+        // call property transformer
+        if (context.propTransformer) {
+            const result = context.propTransformer(
                 source,
                 {
-                    direction: Direction.ToPlain,
+                    direction: Direction.Serialize,
                     type,
                     options,
                     context,
                 },
-                context.transformers?.before,
-                typeDef?.transformers?.toPlain?.before
             );
             
-            if (final) {
-                // transformation is final - return value
-                return value;
+            source = result.output;
+            if (result.final) {
+                return source;
             }
-            else {
-                source = value;
+        }
+        
+        // common before transformers
+        {
+            const result = this._transform(
+                source,
+                Direction.Serialize,
+                TransformStage.Before,
+                type,
+                options,
+                context,
+            );
+            
+            source = result.output;
+            if (result.final) {
+                return source;
             }
         }
         
@@ -413,7 +424,7 @@ export class Serializer
             || propDepth <= options.depth
         ) {
             // collect all suitable props
-            const allProps = this._metadataStorage.getAllProperties(type);
+            const allProps = this._registry.getAllProperties(type);
             
             // add properties from source
             const excludeExtraneous = typeDef?.modifiers.excludeExtraneous ?? options.excludeExtraneous;
@@ -426,7 +437,7 @@ export class Serializer
             for (const propKey of allProps) {
                 const path = (context.path ? context.path + '.' : '') + propKey.toString();
                 
-                const propDef : PropertyDefinition = this._metadataStorage
+                const propDef : PropertyDefinition = this._registry
                     .getPropertyDefinition(type, propKey);
                 
                 // detect non-readable prop
@@ -444,7 +455,7 @@ export class Serializer
                     propKey,
                     propDef,
                     options,
-                    context
+                    context,
                 );
                 
                 if (!exposeMode) {
@@ -462,7 +473,7 @@ export class Serializer
                     const childContext : SerializationContext.ToPlain = {
                         ...context,
                         type: propDef.type,
-                        transformers: propDef.transformers?.toPlain,
+                        propTransformer: propDef.transformers?.serialize,
                         parent: source,
                         propertyKey: propKey,
                         path,
@@ -472,10 +483,10 @@ export class Serializer
                         forceExpose: context.forceExpose ?? exposeDeeply,
                     };
                     
-                    valueToSet = this._toPlain(
+                    valueToSet = this._serialize(
                         source[propKey],
                         options,
-                        childContext
+                        childContext,
                     );
                 }
                 
@@ -485,27 +496,24 @@ export class Serializer
             }
         }
         
-        // transformation after
+        // common after transformers
         {
-            const [ finalValue ] = this._transform(
-                plain,
-                {
-                    direction: Direction.ToPlain,
-                    type,
-                    options,
-                    context,
-                },
-                context.transformers?.after,
-                typeDef?.transformers?.toPlain?.after
+            const result = this._transform(
+                source,
+                Direction.Serialize,
+                TransformStage.After,
+                type,
+                options,
+                context,
             );
             
-            return finalValue;
+            return result.output;
         }
     }
     
-    protected _toPlainCircular<T> (
+    protected _serializeCircular<T> (
         source : T,
-        typeDef : TypeDefinition
+        typeDef : TypeDefinition,
     ) : any
     {
         if (this._useObjectLink) {
@@ -525,7 +533,7 @@ export class Serializer
     }
     
     
-    public toClass<T> (
+    public deserialize<T> (
         source : any,
         options : SerializationOptions.ToClass<T>,
     ) : T
@@ -548,11 +556,11 @@ export class Serializer
         // move type into context
         if (options.type) {
             if (typeof options.type == 'string') {
-                const type = this._metadataStorage.getTypeByName(options.type);
+                const type = this._registry.getTypeByName(options.type);
                 if (!type) {
                     throw new Exception(
                         'Unknown type name: ' + options.type,
-                        1710478811512
+                        1710478811512,
                     );
                 }
                 
@@ -577,13 +585,13 @@ export class Serializer
         
         delete options.groups;
         
-        return this._toClass(source, options, context);
+        return this._deserialize(source, options, context);
     }
     
-    protected _toClass<T> (
+    protected _deserialize<T> (
         source : any,
         options : SerializationOptions.ToClass<T>,
-        context : SerializationContext.ToClass<T>
+        context : SerializationContext.ToClass<T>,
     ) : T
     {
         // catch graph serialization
@@ -608,7 +616,7 @@ export class Serializer
                 const array : any = [];
                 for (const [ idx, itemRaw ] of Object.entries(source)) {
                     const path = (context.path ? context.path + '.' : '') + idx;
-                    const item = this._toClass<any>(itemRaw, options, {
+                    const item = this._deserialize<any>(itemRaw, options, {
                         ...context,
                         type: { type: context.type.arrayOf },
                         path: path,
@@ -628,7 +636,7 @@ export class Serializer
                 const record : any = {};
                 for (const [ propKey, itemRaw ] of Object.entries(source)) {
                     const path = (context.path ? context.path + '.' : '') + propKey;
-                    const item = this._toClass<any>(itemRaw, options, {
+                    const item = this._deserialize<any>(itemRaw, options, {
                         ...context,
                         type: { type: context.type.recordOf },
                         path: path,
@@ -647,7 +655,7 @@ export class Serializer
         
         // get type definition
         const typeDef = type
-            ? this._metadataStorage.getTypeDefinition(type)
+            ? this._registry.getTypeDefinition(type)
             : null
         ;
         
@@ -666,25 +674,37 @@ export class Serializer
         }
         
         // transformation before
-        {
-            const [ value, final ] = this._transform(
+        if (context.propTransformer) {
+            const result = context.propTransformer(
                 source,
                 {
-                    direction: Direction.ToClass,
+                    direction: Direction.Deserialize,
                     type,
                     options,
                     context,
                 },
-                context.transformers?.before,
-                typeDef?.transformers?.toClass?.before
             );
             
-            if (final) {
-                // transformation is final - return value
-                return value;
+            source = result.output;
+            if (result.final) {
+                return source;
             }
-            else {
-                source = value;
+        }
+        
+        // common before transformers
+        {
+            const result = this._transform(
+                source,
+                Direction.Deserialize,
+                TransformStage.Before,
+                type,
+                options,
+                context,
+            );
+            
+            source = result.output;
+            if (result.final) {
+                return source;
             }
         }
         
@@ -710,7 +730,7 @@ export class Serializer
                 // at this stage non object types are considered as object link
                 try {
                     const parsedObjectLink = this.parseObjectLink(source);
-                
+                    
                     const object = new parsedObjectLink.type();
                     object[typeDef.idProperty] = parsedObjectLink.id;
                     
@@ -746,7 +766,7 @@ export class Serializer
             }
         }
         
-        const allProps = this._metadataStorage.getAllProperties(type);
+        const allProps = this._registry.getAllProperties(type);
         
         // add properties from source
         const excludeExtraneous = typeDef?.modifiers.excludeExtraneous ?? options.excludeExtraneous;
@@ -760,7 +780,7 @@ export class Serializer
         for (const propKey of allProps) {
             const path = (context.path ? context.path + '.' : '') + propKey.toString();
             
-            const propDef : PropertyDefinition = this._metadataStorage
+            const propDef : PropertyDefinition = this._registry
                 .getPropertyDefinition(type, propKey);
             
             // detect non-writable prop
@@ -778,7 +798,7 @@ export class Serializer
                 propKey,
                 propDef,
                 options,
-                context
+                context,
             );
             
             // get proper source value
@@ -796,7 +816,7 @@ export class Serializer
                     const childContext : SerializationContext.ToClass = {
                         ...context,
                         type: propDef.type,
-                        transformers: propDef.transformers?.toClass,
+                        propTransformer: propDef.transformers?.deserialize,
                         parent: source,
                         propertyKey: propKey,
                         path,
@@ -804,10 +824,10 @@ export class Serializer
                         forceExpose: context.forceExpose ?? exposeDeeply,
                     };
                     
-                    targetValue = this._toClass(
+                    targetValue = this._deserialize(
                         source[propKey],
                         options,
-                        childContext
+                        childContext,
                     );
                 }
                 
@@ -829,21 +849,18 @@ export class Serializer
             }
         }
         
-        // transformation after
+        // common after transformers
         {
-            const [ finalValue ] = this._transform(
-                instance,
-                {
-                    direction: Direction.ToClass,
-                    type,
-                    options,
-                    context,
-                },
-                context.transformers?.after,
-                typeDef?.transformers?.toClass?.after
+            const result = this._transform(
+                source,
+                Direction.Deserialize,
+                TransformStage.After,
+                type,
+                options,
+                context,
             );
             
-            return finalValue;
+            return result.output;
         }
     }
     
@@ -853,13 +870,13 @@ export class Serializer
         propKey : PropertyKey,
         propDef : PropertyDefinition,
         options : SerializationOptions.Base<T>,
-        context : SerializationContext.Base<T>
+        context : SerializationContext.Base<T>,
     ) : ExpositionCalcResult
     {
         // exclude prefixes is final
         const excludePrefixes = [
             ...options.excludePrefixes,
-            ...(typeDef?.modifiers.excludePrefixes ?? [])
+            ...(typeDef?.modifiers.excludePrefixes ?? []),
         ];
         
         for (const prefix of excludePrefixes) {
@@ -881,7 +898,7 @@ export class Serializer
             return this._calcPropertyExpositionByGraph(
                 context.graph,
                 propKey,
-                exposeByDefault
+                exposeByDefault,
             );
         }
         else {
@@ -890,7 +907,7 @@ export class Serializer
                 for (const exposeDscr of propDef.exposeDscrs) {
                     const matched = this._matchExposeDscr(
                         exposeDscr,
-                        context.groups
+                        context.groups,
                     );
                     if (matched) {
                         return [ exposeDscr.mode, exposeDscr.deeply ];
@@ -906,7 +923,7 @@ export class Serializer
     protected _calcPropertyExpositionByGraph (
         graph : ExposeGraph<any>,
         propKey : PropertyKey,
-        exposeByDefault : boolean
+        exposeByDefault : boolean,
     ) : ExpositionCalcResult
     {
         if (graph === true || graph === false) {
@@ -929,7 +946,7 @@ export class Serializer
     
     protected _matchExposeDscr (
         exposeDscr : ExposeDscr,
-        passedGroups : string[]
+        passedGroups : string[],
     ) : boolean
     {
         let result : boolean = true;
@@ -979,34 +996,52 @@ export class Serializer
         return result;
     }
     
-    protected _transform (
+    protected _transform<T> (
         source : any,
-        params : TransformerFnParams,
-        ...transformers : TransformerFn[]
-    ) : [ any, boolean ]
+        direction : Direction,
+        stage : TransformStage,
+        type : ClassConstructor<T>,
+        options : SerializationOptions.Base<T>,
+        context : SerializationContext.Base<T>,
+    ) : TransformationResult
     {
-        let value = source;
-        let final = false;
+        const transformers = direction === Direction.Serialize
+            ? this._registry.getSerializers()
+            : this._registry.getDeserializers()
+        ;
         
-        for (const transformer of transformers) {
-            if (transformer) {
-                const result = transformer(source, params);
-                
-                value = result[0];
-                final = result[1];
-                
-                if (final) {
-                    break;
-                }
+        for (const { transformer, order } of transformers) {
+            if (
+                stage == TransformStage.Before
+                && order >= 0
+            ) {
+                break;
+            }
+            if (
+                stage == TransformStage.After
+                && order <= 0
+            ) {
+                continue;
+            }
+            
+            if (!transformer.shouldApply(source, type, options, context)) {
+                continue;
+            }
+            
+            const result = transformer[direction](source, options, context);
+            
+            source = result.output;
+            if (result.final) {
+                break;
             }
         }
         
-        return [ value, final ];
+        return source;
     }
     
     protected _detectTypeFromPlain (
         source : any,
-        context : SerializationContext.Base<any>
+        context : SerializationContext.Base<any>,
     ) : any
     {
         const providedTypeName = source instanceof Object
@@ -1016,7 +1051,7 @@ export class Serializer
         
         let providedType : any;
         if (providedTypeName) {
-            providedType = this._metadataStorage.getTypeByName(providedTypeName);
+            providedType = this._registry.getTypeByName(providedTypeName);
         }
         
         if (context.type) {
@@ -1061,11 +1096,11 @@ export class Serializer
             else {
                 throw new Exception(
                     'Id value not specified',
-                    1743360679287
+                    1743360679287,
                 );
             }
         }
-    
+        
         return '@/' + typeDef.name + '/' + id;
     }
     

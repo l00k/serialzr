@@ -18,8 +18,8 @@ export type FactoryFn<T> = () => ClassConstructor<T> & {
 
 export enum Direction
 {
-    ToPlain = 'ToPlain',
-    ToClass = 'ToClass',
+    Serialize = 'serialize',
+    Deserialize = 'deserialize',
 }
 
 export enum Strategy
@@ -37,6 +37,22 @@ export type ParsedObjectLink = {
 
 
 // transformers
+export enum TransformStage
+{
+    Before = 'before',
+    After = 'after',
+}
+
+export type TransformationResult<T = any> = {
+    output : T,
+    final : boolean,
+}
+
+export type TransformerOptions = {
+    serializeOrder : number,
+    deserializeOrder : number,
+}
+
 export type TransformerFnParams<T = any> = {
     direction : Direction,
     type : any,
@@ -44,18 +60,11 @@ export type TransformerFnParams<T = any> = {
     context? : SerializationContext.Base<T> | any,
 }
 
-export type TransformationResult<R> = [ R, boolean? ];
+export type PropTransformerFn<S = any, R = any> = (source : S, params : TransformerFnParams<S>) => TransformationResult<R>;
 
-export type TransformerFn<S = any, R = any> = (source : S, params : TransformerFnParams<S>) => TransformationResult<R>;
-
-export type TransformerDscr<S = any, R = any> = {
-    before? : TransformerFn<S, R>,
-    after? : TransformerFn<S, R>,
-};
-
-export type Transformers<T = any> = {
-    toClass? : TransformerDscr<any, T>,
-    toPlain? : TransformerDscr<T, any>,
+export type PropTransformers<T = any> = {
+    serialize? : PropTransformerFn<T, any>,
+    deserialize? : PropTransformerFn<any, T>,
 };
 
 
@@ -141,7 +150,6 @@ export type TypeDefinition = {
     name? : string,
     idProperty? : PropertyKey,
     autoGroups? : AutoGroupEntry[],
-    transformers? : Transformers,
     modifiers? : TypeModifiers,
 }
 
@@ -149,12 +157,12 @@ export type PropertyDefinition = {
     descriptor? : PropertyDescriptor,
     exposeDscrs? : ExposeDscr[],
     type? : TargetType,
-    transformers? : Transformers,
+    transformers? : PropTransformers,
     modifiers? : PropertyModifiers,
 }
 
 
-// transform options
+// serialization options
 export namespace SerializationOptions
 {
     export type Base<T> = TypeModifiers & {
@@ -173,12 +181,12 @@ export namespace SerializationOptions
 }
 
 
-// transform context
+// serialization context
 export namespace SerializationContext
 {
     export type Base<T> = {
         type? : TargetType,
-        transformers? : TransformerDscr,
+        propTransformer? : PropTransformerFn,
         propModifiers? : PropertyModifiers,
         forceExpose? : boolean,
         groups? : string[],

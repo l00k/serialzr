@@ -2,7 +2,7 @@ import { prepareSerializerContext } from '#/test-helper.js';
 import { serializer, Srlz } from '$/index.js';
 
 
-prepareSerializerContext('ToPlain / Object Link', () => {
+prepareSerializerContext('Serialize / Object Link', () => {
     @Srlz.Type('Sample134')
     class Item
     {

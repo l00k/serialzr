@@ -1,5 +1,5 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { MetadataStorage, Srlz } from '$/index.js';
+import { Registry, Srlz } from '$/index.js';
 
 
 prepareSerializerContext('Metadata', () => {
@@ -33,17 +33,17 @@ prepareSerializerContext('Metadata', () => {
     
     class Admin extends Player {}
     
-    const metadataStorage = MetadataStorage.getSingleton();
+    const registry = Registry.getSingleton();
     
     
     it('should not be possible to register second type with the same name', () => {
-        metadataStorage.registerType(
+        registry.registerType(
             User,
             { name: 'User' }
         );
         
         expect(() => {
-            metadataStorage.registerType(
+            registry.registerType(
                 Player,
                 { name: 'User' }
             );
@@ -51,7 +51,7 @@ prepareSerializerContext('Metadata', () => {
     });
     
     it('should properly return list of properties', () => {
-        const properties = metadataStorage.getAllProperties(Player);
+        const properties = registry.getAllProperties(Player);
         
         expect(Array.from(properties)).to.be.eql([
             'id',
@@ -64,7 +64,7 @@ prepareSerializerContext('Metadata', () => {
     });
     
     it('should return proper property definition for child class', () => {
-        const idPropDef = metadataStorage.getPropertyDefinition(
+        const idPropDef = registry.getPropertyDefinition(
             Admin,
             'id'
         );
@@ -86,7 +86,7 @@ prepareSerializerContext('Metadata', () => {
     });
     
     it('should return proper properties list for child class', () => {
-        const properties = metadataStorage.getAllProperties(Admin);
+        const properties = registry.getAllProperties(Admin);
         
         expect(Array.from(properties)).to.be.eql([
             'id',
@@ -99,11 +99,11 @@ prepareSerializerContext('Metadata', () => {
     });
     
     it('should update cache on metadata cache', () => {
-        metadataStorage.getAllProperties(Player);
+        registry.getAllProperties(Player);
         
         Srlz.Expose()(Player.prototype, 'foo');
         
-        const properties = metadataStorage.getAllProperties(Player);
+        const properties = registry.getAllProperties(Player);
         
         expect(Array.from(properties)).to.be.eql([
             'id',

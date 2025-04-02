@@ -14,6 +14,7 @@ export default tseslint.config(
             '@typescript-eslint/no-explicit-any': [ 'off' ],
             '@typescript-eslint/no-this-alias': [ 'off' ],
             '@typescript-eslint/ban-ts-comment': [ 'off' ],
+            '@typescript-eslint/no-namespace': [ 'off' ],
             '@typescript-eslint/consistent-type-imports': [ 'error', {
                 prefer: 'type-imports',
                 fixStyle: 'separate-type-imports',

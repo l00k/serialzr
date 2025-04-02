@@ -21,7 +21,6 @@
         "strictNullChecks": false,
         "strictPropertyInitialization": false,
         
-        "importsNotUsedAsValues": "error",
         "verbatimModuleSyntax": true,
         "isolatedModules": true,
 

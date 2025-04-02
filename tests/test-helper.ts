@@ -1,20 +1,20 @@
-import { MetadataStorage, serializer } from '$/index.js';
+import { Registry, serializer } from '$/index.js';
 
 
-function cleanupMetadataStorage () : MetadataStorage
+function cleanupRegistry () : Registry
 {
-    const backup = MetadataStorage.getSingleton();
+    const backup = Registry.getSingleton();
     
-    MetadataStorage['__singleton'] = null;
-    serializer['_metadataStorage'] = MetadataStorage.getSingleton();
+    Registry['__singleton'] = null;
+    serializer['_registry'] = Registry.getSingleton();
     
     return backup;
 }
 
-function restoreMetadataStorage (backup : MetadataStorage) : void
+function restoreRegistry (backup : Registry) : void
 {
-    MetadataStorage['__singleton'] = backup;
-    serializer['_metadataStorage'] = backup;
+    Registry['__singleton'] = backup;
+    serializer['_registry'] = backup;
 }
 
 export function prepareSerializerContext (
@@ -22,19 +22,19 @@ export function prepareSerializerContext (
     fn : Function
 ) : void
 {
-    const backupGlobal : MetadataStorage = cleanupMetadataStorage();
+    const backupGlobal : Registry = cleanupRegistry();
     
     describe(name, () => {
         fn();
         
-        const backupLocal : MetadataStorage = cleanupMetadataStorage();
+        const backupLocal : Registry = cleanupRegistry();
         
         beforeEach(() => {
-            restoreMetadataStorage(backupLocal);
+            restoreRegistry(backupLocal);
         });
         
         after(() => {
-            restoreMetadataStorage(backupGlobal);
+            restoreRegistry(backupGlobal);
         });
     });
 }
