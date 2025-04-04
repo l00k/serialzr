@@ -325,16 +325,17 @@ export class Serializer
         
         // add type property
         if (typeDef) {
-            // todo ld 2025-04-04 18:42:46 - move to transformer
             if (typeDef.name) {
                 plain[this._typeProperty] = typeDef.name;
             }
+            
             if (this._useObjectLink) {
                 plain[this._objectLinkProperty] = buildObjectLink(
                     source,
                     typeDef,
                 );
             }
+            
             if (typeDef.idProperty) {
                 plain[typeDef.idProperty] = source[typeDef.idProperty];
             }
@@ -681,7 +682,7 @@ export class Serializer
         const excludeExtraneous = typeDef?.modifiers.excludeExtraneous ?? options.excludeExtraneous;
         if (!excludeExtraneous || context.forceExpose) {
             Object.keys(source)
-                .filter(propKey => ![ this._typeProperty ].includes(propKey)) // skip special props
+                .filter(propKey => ![ this._objectLinkProperty, this._typeProperty ].includes(propKey)) // skip special props
                 .forEach(propKey => allProps.add(propKey))
             ;
         }

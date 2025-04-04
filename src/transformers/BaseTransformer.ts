@@ -14,18 +14,24 @@ export abstract class BaseTransformer
         return false;
     }
     
-    public abstract serialize (
+    public serialize (
         source : any,
         type : ClassConstructor<any>,
         options : SerializationOptions.Base<any>,
         context : SerializationContext.Base<any>,
-    ) : TransformationResult;
+    ) : TransformationResult
+    {
+        return { output: source, final: false };
+    }
     
-    public abstract deserialize (
+    public deserialize (
         source : any,
         type : ClassConstructor<any>,
         options : SerializationOptions.Base<any>,
         context : SerializationContext.Base<any>,
-    ) : TransformationResult;
+    ) : TransformationResult
+    {
+        return { output: source, final: false };
+    }
     
 }

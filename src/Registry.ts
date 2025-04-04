@@ -355,9 +355,7 @@ export class Registry
         return this._transformers[direction][stage];
     }
     
-    public getAllProperties (
-        targetClass : any,
-    ) : Set<PropertyKey>
+    public getAllProperties (targetClass : any) : Set<PropertyKey>
     {
         let propertiesCache = this._propertiesCache.get(targetClass);
         if (!propertiesCache) {
