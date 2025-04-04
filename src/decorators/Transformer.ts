@@ -1,26 +1,21 @@
-import type { PropTransformerFn } from '../def.js';
-import { Registry } from '../Registry.js';
+import type { PropTransformerFn, PropTransformerGroup } from '$/def.js';
+import { Registry } from '$/Registry.js';
 
-type TransformerDscr<S = any, R = any> = PropTransformerFn<S, R> | {
-    before? : PropTransformerFn<S, R>,
-    after? : PropTransformerFn<S, R>,
+type PropTransformerDscrOpt = {
+    serialize? : PropTransformerGroup | PropTransformerFn,
+    deserialize? : PropTransformerGroup | PropTransformerFn,
 };
 
-type Transformers<T = any> = {
-    toClass? : TransformerDscr<any, T>,
-    toPlain? : TransformerDscr<T, any>,
-};
-
-function Transformer<T = any> (transformers : Transformers<T>) : PropertyDecorator
+function Transformer (transformerDscrOpt : PropTransformerDscrOpt) : PropertyDecorator
 {
     return (target : any, propertyKey : PropertyKey) => {
         const constructor = target.constructor;
         
-        if (typeof transformers.toPlain == 'function') {
-            transformers.toPlain = { before: transformers.toPlain };
+        if (typeof transformerDscrOpt.serialize == 'function') {
+            transformerDscrOpt.serialize = { before: transformerDscrOpt.serialize };
         }
-        if (typeof transformers.toClass == 'function') {
-            transformers.toClass = { before: transformers.toClass };
+        if (typeof transformerDscrOpt.deserialize == 'function') {
+            transformerDscrOpt.deserialize = { before: transformerDscrOpt.deserialize };
         }
         
         const registry = Registry.getSingleton();
@@ -29,18 +24,29 @@ function Transformer<T = any> (transformers : Transformers<T>) : PropertyDecorat
             .registerPropertyTransformers(
                 constructor,
                 propertyKey,
-                <any>transformers,
+                <any>transformerDscrOpt,
             );
     };
 }
 
+type PropTransformerOpt = PropTransformerFn | PropTransformerGroup;
 
-Transformer.ToClass = function <T extends object = any> (transformer : TransformerDscr<any, T>) : any {
-    return Transformer({ toClass: transformer });
+Transformer.Deserialize = function(transformerOpt : PropTransformerOpt) : any {
+    const transformerGroup : PropTransformerGroup = typeof transformerOpt === 'function'
+        ? { before: transformerOpt }
+        : <any>transformerOpt
+    ;
+    
+    return Transformer({ deserialize: transformerGroup });
 };
 
-Transformer.ToPlain = function <T extends object = any> (transformer : TransformerDscr<T, any>) : any {
-    return Transformer({ toPlain: transformer });
+Transformer.Serialize = function <T = any> (transformerOpt : PropTransformerOpt) : any {
+    const transformerGroup : PropTransformerGroup = typeof transformerOpt === 'function'
+        ? { before: transformerOpt }
+        : <any>transformerOpt
+    ;
+    
+    return Transformer({ serialize: transformerGroup });
 };
 
 

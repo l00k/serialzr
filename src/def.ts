@@ -49,8 +49,8 @@ export type TransformationResult<T = any> = {
 }
 
 export type TransformerOptions = {
-    serializeOrder : number,
-    deserializeOrder : number,
+    serializeOrder? : number,
+    deserializeOrder? : number,
 }
 
 export type TransformerFnParams<T = any> = {
@@ -62,9 +62,14 @@ export type TransformerFnParams<T = any> = {
 
 export type PropTransformerFn<S = any, R = any> = (source : S, params : TransformerFnParams<S>) => TransformationResult<R>;
 
-export type PropTransformers<T = any> = {
-    serialize? : PropTransformerFn<T, any>,
-    deserialize? : PropTransformerFn<any, T>,
+export type PropTransformerGroup<S = any, R = any> = {
+    before? : PropTransformerFn<S, R>,
+    after? : PropTransformerFn<S, R>,
+};
+
+export type PropTransformerDscr<T = any> = {
+    serialize? : PropTransformerGroup<T, any>,
+    deserialize? : PropTransformerGroup<any, T>,
 };
 
 
@@ -157,7 +162,7 @@ export type PropertyDefinition = {
     descriptor? : PropertyDescriptor,
     exposeDscrs? : ExposeDscr[],
     type? : TargetType,
-    transformers? : PropTransformers,
+    transformers? : PropTransformerDscr,
     modifiers? : PropertyModifiers,
 }
 
@@ -166,6 +171,10 @@ export type PropertyDefinition = {
 export namespace SerializationOptions
 {
     export type Base<T> = TypeModifiers & {
+        typeProperty? : string,
+        idProperty? : string,
+        useObjectLink? : boolean,
+        
         groups? : string[],
         graph? : ExposeGraph<T>,
         ctxData? : Record<any, any>,
@@ -186,7 +195,8 @@ export namespace SerializationContext
 {
     export type Base<T> = {
         type? : TargetType,
-        propTransformer? : PropTransformerFn,
+        typeDef? : TypeDefinition,
+        propTransformer? : PropTransformerGroup,
         propModifiers? : PropertyModifiers,
         forceExpose? : boolean,
         groups? : string[],

@@ -14,13 +14,3 @@ declare global
     // @ts-ignore
     const expect : Chai.ExpectStatic;
 }
-
-
-beforeEach(() => {
-    serializer['_initiated'] = false;
-    serializer.init({
-        typeProperty: '@type',
-        objectLinkProperty: '@id',
-        useObjectLink: false,
-    });
-});

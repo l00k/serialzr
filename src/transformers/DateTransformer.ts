@@ -4,8 +4,6 @@ import { BaseTransformer } from '$/transformers/BaseTransformer.js';
 
 
 @RegisterTransformer({
-    serializeOrder: -100,
-    deserializeOrder: -100,
 })
 export class DateTransformer extends BaseTransformer
 {

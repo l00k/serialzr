@@ -1,4 +1,5 @@
 import { prepareSerializerContext } from '#/test-helper.js';
+import { parseObjectLink } from '$/helpers/index.js';
 import { serializer, Srlz } from '$/index.js';
 
 
@@ -26,7 +27,7 @@ prepareSerializerContext('Serialize / Object Link', () => {
     });
     
     it('Should be able to parse object link', () => {
-        const parsedObjectLink = serializer.parseObjectLink('@/Sample134/3');
+        const parsedObjectLink = parseObjectLink('@/Sample134/3');
         
         expect(parsedObjectLink).to.deep.equal({
             type: Item,

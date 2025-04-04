@@ -106,7 +106,7 @@ prepareSerializerContext('Deserialize / Exposing', () => {
         
         const obj = serializer.deserialize(
             plain,
-            { type: Player, groups: [ 'adminOnly' ] }
+            { type: Player, groups: [ 'adminOnly' ] },
         );
         
         expect(obj).instanceof(Player);
@@ -133,7 +133,7 @@ prepareSerializerContext('Deserialize / Exposing', () => {
         
         const obj = serializer.deserialize(
             plain,
-            { type: Player, groups: [ 'withoutDetails' ] }
+            { type: Player, groups: [ 'withoutDetails' ] },
         );
         
         expect(obj).instanceof(Player);
@@ -160,8 +160,8 @@ prepareSerializerContext('Deserialize / Exposing', () => {
             plain,
             {
                 type: Player,
-                defaultStrategy: Strategy.Expose
-            }
+                defaultStrategy: Strategy.Expose,
+            },
         );
         
         expect(obj).instanceof(Player);
@@ -193,7 +193,7 @@ prepareSerializerContext('Deserialize / Exposing', () => {
         
         const obj = serializer.deserialize(
             plain,
-            { type: User, defaultStrategy: Strategy.Expose, excludePrefixes: [ '__' ] }
+            { type: User, defaultStrategy: Strategy.Expose, excludePrefixes: [ '__' ] },
         );
         
         expect(obj).instanceof(User);

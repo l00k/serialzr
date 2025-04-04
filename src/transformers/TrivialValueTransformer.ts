@@ -1,7 +1,7 @@
 import type { ClassConstructor, SerializationContext, SerializationOptions, TransformationResult } from '$/def.js';
+import { BaseTransformer } from '$/transformers/BaseTransformer.js';
 
-
-export abstract class BaseTransformer
+export class TrivialValueTransformer extends BaseTransformer
 {
     
     public shouldApply (
@@ -11,21 +11,26 @@ export abstract class BaseTransformer
         context : SerializationContext.Base<any>,
     ) : boolean
     {
-        return false;
+        return [
+            null,
+            undefined,
+        ].includes(source);
     }
     
-    public abstract serialize (
+    public serialize (
         source : any,
         type : ClassConstructor<any>,
-        options : SerializationOptions.Base<any>,
-        context : SerializationContext.Base<any>,
-    ) : TransformationResult;
+    ) : TransformationResult
+    {
+        return { output: source, final: true };
+    }
     
-    public abstract deserialize (
+    public deserialize (
         source : any,
         type : ClassConstructor<any>,
-        options : SerializationOptions.Base<any>,
-        context : SerializationContext.Base<any>,
-    ) : TransformationResult;
+    ) : TransformationResult
+    {
+        return { output: source, final: true };
+    }
     
 }

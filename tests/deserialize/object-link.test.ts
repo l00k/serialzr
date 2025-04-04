@@ -1,5 +1,5 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { serializer, Srlz } from '$/index.js';
+import { Registry , serializer, Srlz } from '$/index.js';
 
 
 prepareSerializerContext('Deserialize / Object Link', () => {
@@ -28,7 +28,7 @@ prepareSerializerContext('Deserialize / Object Link', () => {
         });
     });
     
-    it('Should be able to build object link in childs', () => {
+    it('Should be able to parse object link in childs', () => {
         const obj = serializer.deserialize({
             '@type': 'Sample136',
             '@id': '@/Sample136/5',
@@ -41,7 +41,7 @@ prepareSerializerContext('Deserialize / Object Link', () => {
             id: 5,
             child: {
                 id: 6,
-            }
+            },
         });
         expect(obj.child).instanceof(Item);
     });

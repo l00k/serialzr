@@ -7,7 +7,7 @@ export function Computed (
 {
     return (target : any, propertyKey : string | symbol) => {
         Transformer({
-            toPlain: (value : any, params : TransformerFnParams) => {
+            serialize: (value : any, params : TransformerFnParams) => {
                 if (value !== undefined) {
                     // already defined
                     return { output: value, final: true };

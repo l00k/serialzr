@@ -1,57 +1,57 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { Registry, Srlz } from '$/index.js';
+import { TransformStage , Direction , BaseTransformer, Registry } from '$/index.js';
+import type { TransformationResult } from '$/index.js';
 
 
 prepareSerializerContext('Decorators', () => {
-    describe('Transform', () => {
-        const fn = (obj : any) => obj.constructor.name;
+    describe('RegisterTransformer', () => {
         
-        it('should uniform toPlain transformer', () => {
-            @Srlz.Transformer({ toPlain: fn })
-            class Foo {}
+        class FooTransformer extends BaseTransformer
+        {
+            public shouldApply () : boolean
+            {
+                return true;
+            }
             
-            const typeDefinition = Registry.getSingleton()
-                .getTypeDefinition(Foo);
+            public serialize () : TransformationResult
+            {
+                return undefined;
+            }
             
-            expect(typeDefinition.transformers).to.be.deep.equal({
-                toPlain: { before: fn }
+            public deserialize () : TransformationResult
+            {
+                return undefined;
+            }
+        }
+        
+        it('Should properly register deserializer', () => {
+            const registry = Registry.getSingleton();
+            
+            registry.registerTransformers(FooTransformer, {
+                serializeOrder: -20,
+                deserializeOrder: -10,
             });
+            
+            const entry = registry.getTransformers(Direction.Deserialize, TransformStage.Before)
+                .find(e => e.transformer instanceof FooTransformer)
+            ;
+            expect(entry).to.exist;
+            expect(entry.order).to.be.eql(-10);
         });
         
-        it('should uniform toClass transformer', () => {
-            @Srlz.Transformer({ toClass: fn })
-            class Foo {}
+        it('Should properly register serializer', () => {
+            const registry = Registry.getSingleton();
             
-            const typeDefinition = Registry.getSingleton()
-                .getTypeDefinition(Foo);
-            
-            expect(typeDefinition.transformers).to.be.deep.equal({
-                toClass: { before: fn }
+            registry.registerTransformers(FooTransformer, {
+                serializeOrder: -20,
+                deserializeOrder: -10,
             });
-        });
-        
-        it('should properly assign in ToPlain variant', () => {
-            @Srlz.Transformer.ToPlain(fn)
-            class Foo {}
             
-            const typeDefinition = Registry.getSingleton()
-                .getTypeDefinition(Foo);
-            
-            expect(typeDefinition.transformers).to.be.deep.equal({
-                toPlain: { before: fn }
-            });
-        });
-        
-        it('should properly assign in ToClass variant', () => {
-            @Srlz.Transformer.ToClass(fn)
-            class Foo {}
-            
-            const typeDefinition = Registry.getSingleton()
-                .getTypeDefinition(Foo);
-            
-            expect(typeDefinition.transformers).to.be.deep.equal({
-                toClass: { before: fn }
-            });
+            const entry = registry.getTransformers(Direction.Serialize, TransformStage.Before)
+                .find(e => e.transformer instanceof FooTransformer)
+            ;
+            expect(entry).to.exist;
+            expect(entry.order).to.be.eql(-20);
         });
         
     });

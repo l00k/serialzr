@@ -1,71 +1,71 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { serializer } from '$/index.js';
+import { Registry , serializer } from '$/index.js';
 
 prepareSerializerContext('Deserialize / Built-in types', () => {
     const examples = [
         {
             name: 'undefined',
             value: undefined,
-            expected: undefined
+            expected: undefined,
         },
         {
             name: 'null',
             value: null,
-            expected: null
+            expected: null,
         },
         {
             name: 'false',
             value: false,
-            expected: false
+            expected: false,
         },
         {
             name: 'true',
             value: true,
-            expected: true
+            expected: true,
         },
         {
             name: 'false typed',
             type: Boolean,
             value: 'false',
-            expected: false
+            expected: false,
         },
         {
             name: 'true typed',
             type: Boolean,
             value: 'true',
-            expected: true
+            expected: true,
         },
         {
             name: 'true typed',
             type: Boolean,
             value: 0,
-            expected: false
+            expected: false,
         },
         {
             name: 'number 0',
             value: 0,
-            expected: 0
+            expected: 0,
         },
         {
             name: 'number 123',
             value: 123,
-            expected: 123
+            expected: 123,
         },
         {
             name: 'number typed',
             type: Number,
             value: '123',
-            expected: 123
+            expected: 123,
         },
         {
             name: 'empty string',
             value: '',
-            expected: ''
+            expected: '',
         },
         {
             name: 'string',
             value: 'text',
-            expected: 'text'
+            expected: 'text',
         },
         {
             name: 'Date by number',
@@ -110,7 +110,7 @@ prepareSerializerContext('Deserialize / Built-in types', () => {
         {
             name: 'array of strings',
             value: [ 'text1', 'text2' ],
-            expected: [ 'text1', 'text2' ]
+            expected: [ 'text1', 'text2' ],
         },
         {
             name: 'wrong array of strings',
@@ -122,13 +122,13 @@ prepareSerializerContext('Deserialize / Built-in types', () => {
             name: 'record of strings',
             value: { a: 'text1', b: 'text2' },
             expected: { a: 'text1', b: 'text2' },
-            type: { recordOf: () => undefined }
+            type: { recordOf: () => undefined },
         },
         {
             name: 'wrong record of strings',
             value: false,
             expected: undefined,
-            type: { recordOf: () => undefined }
+            type: { recordOf: () => undefined },
         },
     ];
     

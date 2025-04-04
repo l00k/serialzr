@@ -5,14 +5,13 @@ import type {
     ExposeDscr,
     ExposeGraph,
     ExposeMode,
-    ParsedObjectLink,
     PropertyDefinition,
     SerializationContext,
     SerializationOptions,
     TransformationResult,
     TypeDefinition,
 } from './def.js';
-import { Exception, getClassesFromChain } from './helpers/index.js';
+import { buildObjectLink, Exception, getClassesFromChain } from './helpers/index.js';
 import { Registry } from './Registry.js';
 
 
@@ -32,8 +31,8 @@ export class Serializer
     
     protected _typeProperty : string = '@type';
     protected _objectLinkProperty : string = '@id';
-    
     protected _useObjectLink : boolean = false;
+    
     protected _initiated : boolean = false;
     
     
@@ -106,67 +105,11 @@ export class Serializer
             );
         }
         
-        return this._buildObjectLink(
+        return buildObjectLink(
             source,
             typeDef,
             false,
         );
-    }
-    
-    public parseObjectLink (objectLink : string) : ParsedObjectLink
-    {
-        if (!objectLink.startsWith('@/')) {
-            throw new Exception(
-                'Wrong format of object link',
-                1743360099255,
-            );
-        }
-        
-        objectLink = objectLink.substring(2);
-        
-        const lastSlashIdx = objectLink.lastIndexOf('/');
-        const typeName = objectLink.substring(0, lastSlashIdx);
-        const idRaw = objectLink.substring(lastSlashIdx + 1);
-        
-        const type = this.getTypeByName(typeName);
-        if (!type) {
-            throw new Exception(
-                'Unknown type: ' + type.name,
-                1743360231473,
-            );
-        }
-        
-        const typeDef = this._registry.getTypeDefinition(type);
-        if (!typeDef) {
-            throw new Exception(
-                'Unknown type: ' + type.name,
-                1743360244832,
-            );
-        }
-        
-        const idPropName = typeDef.idProperty;
-        if (!idPropName) {
-            throw new Exception(
-                'There is no defined property for type: ' + type.name,
-                1743360388303,
-            );
-        }
-        
-        const idPropTypeDef = this._registry.getPropertyDefinition(type, idPropName);
-        const idPropType = idPropTypeDef.type?.type
-            ? idPropTypeDef.type?.type()
-            : String
-        ;
-        
-        const id = idPropType == Number
-            ? Number(idRaw)
-            : idRaw
-        ;
-        
-        return {
-            type,
-            id,
-        };
     }
     
     
@@ -188,6 +131,11 @@ export class Serializer
             defaultStrategy: Strategy.Exclude,
             excludePrefixes: [],
             excludeExtraneous: true,
+            
+            typeProperty: this._typeProperty,
+            idProperty: this._objectLinkProperty,
+            useObjectLink: this._useObjectLink,
+            
             ...options,
         };
         
@@ -305,6 +253,8 @@ export class Serializer
             : null
         ;
         
+        context.typeDef = typeDef;
+        
         // catch circular dependencies
         if (context.circular.includes(source)) {
             if (typeDef) {
@@ -335,8 +285,8 @@ export class Serializer
         }
         
         // call property transformer
-        if (context.propTransformer) {
-            const result = context.propTransformer(
+        if (context.propTransformer?.before) {
+            const result = context.propTransformer.before(
                 source,
                 {
                     direction: Direction.Serialize,
@@ -354,7 +304,7 @@ export class Serializer
         
         // common before transformers
         {
-            const result = this._transform(
+            const { output, final } = this._transform(
                 source,
                 Direction.Serialize,
                 TransformStage.Before,
@@ -363,51 +313,24 @@ export class Serializer
                 context,
             );
             
-            source = result.output;
-            if (result.final) {
+            source = output;
+            
+            if (final) {
                 return source;
             }
         }
         
-        // trivial values
-        if ([ undefined, null ].includes(<any>source)) {
-            return <any>source;
-        }
-        
-        // built in types
-        if ([ undefined, null ].includes(type)) {
-            return <any>source;
-        }
-        if ([ Boolean, Number, String, Date, BigInt ].includes(type)) {
-            return this._transformBuiltIn(type, source);
-        }
-        
-        // verify source type
-        if (!(source instanceof Object)) {
-            if (typeDef) {
-                // at this stage non object types are considered as ID value
-                return this._buildObjectLink(
-                    { [typeDef.idProperty]: source },
-                    typeDef,
-                );
-            }
-            else {
-                // no info how to transform entry
-                // transformer may be required to handle this case
-                return undefined;
-            }
-        }
-        
         // build plain object
-        const plain : any = {};
+        let plain : any = {};
         
         // add type property
         if (typeDef) {
+            // todo ld 2025-04-04 18:42:46 - move to transformer
             if (typeDef.name) {
                 plain[this._typeProperty] = typeDef.name;
             }
             if (this._useObjectLink) {
-                plain[this._objectLinkProperty] = this._buildObjectLink(
+                plain[this._objectLinkProperty] = buildObjectLink(
                     source,
                     typeDef,
                 );
@@ -472,15 +395,15 @@ export class Serializer
                     // prepare child context
                     const childContext : SerializationContext.ToPlain = {
                         ...context,
-                        type: propDef.type,
-                        propTransformer: propDef.transformers?.serialize,
                         parent: source,
                         propertyKey: propKey,
+                        type: propDef.type,
                         path,
                         depth: propDepth,
                         circular: [ ...context.circular, source ],
                         graph: childGraph,
                         forceExpose: context.forceExpose ?? exposeDeeply,
+                        propTransformer: propDef.transformers?.serialize,
                     };
                     
                     valueToSet = this._serialize(
@@ -496,10 +419,28 @@ export class Serializer
             }
         }
         
+        // property transformation after
+        if (context.propTransformer?.after) {
+            const result = context.propTransformer?.after(
+                plain,
+                {
+                    direction: Direction.Serialize,
+                    type,
+                    options,
+                    context,
+                },
+            );
+            
+            plain = result.output;
+            if (result.final) {
+                return source;
+            }
+        }
+        
         // common after transformers
         {
-            const result = this._transform(
-                source,
+            const { output } = this._transform(
+                plain,
                 Direction.Serialize,
                 TransformStage.After,
                 type,
@@ -507,7 +448,7 @@ export class Serializer
                 context,
             );
             
-            return result.output;
+            return output;
         }
     }
     
@@ -517,7 +458,7 @@ export class Serializer
     ) : any
     {
         if (this._useObjectLink) {
-            return this._buildObjectLink(source, typeDef);
+            return buildObjectLink(source, typeDef);
         }
         
         const plain : any = {};
@@ -550,6 +491,11 @@ export class Serializer
             excludePrefixes: [],
             excludeExtraneous: true,
             keepInitialValues: true,
+            
+            typeProperty: this._typeProperty,
+            idProperty: this._objectLinkProperty,
+            useObjectLink: this._useObjectLink,
+            
             ...options,
         };
         
@@ -659,6 +605,8 @@ export class Serializer
             : null
         ;
         
+        context.typeDef = typeDef;
+        
         // auto groups
         if (typeDef?.autoGroups) {
             for (const autoGroupEntry of typeDef.autoGroups) {
@@ -673,9 +621,9 @@ export class Serializer
             }
         }
         
-        // transformation before
-        if (context.propTransformer) {
-            const result = context.propTransformer(
+        // property transformation before
+        if (context.propTransformer?.before) {
+            const result = context.propTransformer?.before(
                 source,
                 {
                     direction: Direction.Deserialize,
@@ -693,7 +641,7 @@ export class Serializer
         
         // common before transformers
         {
-            const result = this._transform(
+            const { output, final } = this._transform(
                 source,
                 Direction.Deserialize,
                 TransformStage.Before,
@@ -702,49 +650,10 @@ export class Serializer
                 context,
             );
             
-            source = result.output;
-            if (result.final) {
+            source = output;
+            
+            if (final) {
                 return source;
-            }
-        }
-        
-        // trivial values
-        if ([ undefined, null ].includes(source)) {
-            return <any>source;
-        }
-        
-        // built in types
-        if ([ undefined, null ].includes(type)) {
-            return <any>source;
-        }
-        if ([ Boolean, Number, String, Date, BigInt ].includes(type)) {
-            return this._transformBuiltIn(type, source);
-        }
-        
-        // verify source type
-        if (!(source instanceof Object)) {
-            if (
-                typeDef
-                && this._useObjectLink
-            ) {
-                // at this stage non object types are considered as object link
-                try {
-                    const parsedObjectLink = this.parseObjectLink(source);
-                    
-                    const object = new parsedObjectLink.type();
-                    object[typeDef.idProperty] = parsedObjectLink.id;
-                    
-                    return object;
-                }
-                catch (e) {
-                    // unable to parse object link
-                    return undefined;
-                }
-            }
-            else {
-                // no info how to transform entry
-                // transformer may be required to handle this case
-                return undefined;
             }
         }
         
@@ -815,13 +724,13 @@ export class Serializer
                     // prepare child context
                     const childContext : SerializationContext.ToClass = {
                         ...context,
-                        type: propDef.type,
-                        propTransformer: propDef.transformers?.deserialize,
                         parent: source,
                         propertyKey: propKey,
+                        type: propDef.type,
                         path,
                         graph: childGraph,
                         forceExpose: context.forceExpose ?? exposeDeeply,
+                        propTransformer: propDef.transformers?.deserialize,
                     };
                     
                     targetValue = this._deserialize(
@@ -849,10 +758,28 @@ export class Serializer
             }
         }
         
+        // property transformation after
+        if (context.propTransformer?.after) {
+            const result = context.propTransformer?.after(
+                instance,
+                {
+                    direction: Direction.Deserialize,
+                    type,
+                    options,
+                    context,
+                },
+            );
+            
+            instance = result.output;
+            if (result.final) {
+                return source;
+            }
+        }
+        
         // common after transformers
         {
-            const result = this._transform(
-                source,
+            const { output } = this._transform(
+                instance,
                 Direction.Deserialize,
                 TransformStage.After,
                 type,
@@ -860,7 +787,7 @@ export class Serializer
                 context,
             );
             
-            return result.output;
+            return output;
         }
     }
     
@@ -936,7 +863,6 @@ export class Serializer
             return [ true, true, '**' ];
         }
         else {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             const expose = graph[propKey] ?? graph.$default ?? exposeByDefault;
             const deeply = expose === '**';
@@ -1005,38 +931,40 @@ export class Serializer
         context : SerializationContext.Base<T>,
     ) : TransformationResult
     {
-        const transformers = direction === Direction.Serialize
-            ? this._registry.getSerializers()
-            : this._registry.getDeserializers()
-        ;
+        const transformers = this._registry.getTransformers(
+            direction,
+            stage,
+        );
         
-        for (const { transformer, order } of transformers) {
-            if (
-                stage == TransformStage.Before
-                && order >= 0
-            ) {
-                break;
-            }
-            if (
-                stage == TransformStage.After
-                && order <= 0
-            ) {
+        let result : TransformationResult = {
+            output: source,
+            final: false,
+        };
+        
+        for (const { transformer } of transformers) {
+            const shouldApply = transformer.shouldApply(
+                result.output,
+                type,
+                options,
+                context,
+            );
+            if (!shouldApply) {
                 continue;
             }
             
-            if (!transformer.shouldApply(source, type, options, context)) {
-                continue;
-            }
+            result = transformer[direction](
+                result.output,
+                type,
+                options,
+                context,
+            );
             
-            const result = transformer[direction](source, options, context);
-            
-            source = result.output;
             if (result.final) {
                 break;
             }
         }
         
-        return source;
+        return result;
     }
     
     protected _detectTypeFromPlain (
@@ -1080,64 +1008,6 @@ export class Serializer
         }
         
         return null;
-    }
-    
-    protected _buildObjectLink (
-        source : any,
-        typeDef : TypeDefinition,
-        allowBlank : boolean = true,
-    ) : string
-    {
-        const id = source[typeDef.idProperty];
-        if (id === undefined) {
-            if (allowBlank) {
-                return undefined;
-            }
-            else {
-                throw new Exception(
-                    'Id value not specified',
-                    1743360679287,
-                );
-            }
-        }
-        
-        return '@/' + typeDef.name + '/' + id;
-    }
-    
-    protected _transformBuiltIn (
-        type : ClassConstructor<any>,
-        source : any,
-    ) : any
-    {
-        if (type == Boolean) {
-            if (typeof source == 'boolean') {
-                return source;
-            }
-            else if (typeof source == 'string') {
-                return source == 'true';
-            }
-            return !!source;
-        }
-        else if (type == Number) {
-            if (typeof source == 'number') {
-                return source;
-            }
-            return Number(source);
-        }
-        else if (type == String) {
-            if (typeof source == 'string') {
-                return source;
-            }
-            return String(source);
-        }
-        else if (type == Date) {
-            return new Date(source);
-        }
-        else if (type == <any>BigInt) {
-            return BigInt(source);
-        }
-        
-        return undefined;
     }
     
 }

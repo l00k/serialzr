@@ -1,14 +1,16 @@
-import { Registry, serializer } from '$/index.js';
-
+import { registerBuiltInTransformers, Registry, serializer } from '$/index.js';
+import { after } from 'mocha';
 
 function cleanupRegistry () : Registry
 {
-    const backup = Registry.getSingleton();
-    
     Registry['__singleton'] = null;
-    serializer['_registry'] = Registry.getSingleton();
+    const newRegistry = Registry.getSingleton();
     
-    return backup;
+    serializer['_registry'] = newRegistry;
+    
+    registerBuiltInTransformers();
+    
+    return newRegistry;
 }
 
 function restoreRegistry (backup : Registry) : void
@@ -19,22 +21,27 @@ function restoreRegistry (backup : Registry) : void
 
 export function prepareSerializerContext (
     name : string,
-    fn : Function
+    fn : any,
 ) : void
 {
-    const backupGlobal : Registry = cleanupRegistry();
-    
     describe(name, () => {
-        fn();
-        
-        const backupLocal : Registry = cleanupRegistry();
+        const context = cleanupRegistry();
         
         beforeEach(() => {
-            restoreRegistry(backupLocal);
+            serializer['_initiated'] = false;
+            serializer.init({
+                typeProperty: '@type',
+                objectLinkProperty: '@id',
+                useObjectLink: false,
+            });
+            
+            restoreRegistry(context);
         });
         
         after(() => {
-            restoreRegistry(backupGlobal);
+            cleanupRegistry();
         });
+        
+        fn();
     });
 }

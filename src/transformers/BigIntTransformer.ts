@@ -1,12 +1,6 @@
-import { RegisterTransformer } from '$/decorators/index.js';
 import type { ClassConstructor, SerializationContext, SerializationOptions, TransformationResult } from '$/def.js';
 import { BaseTransformer } from '$/transformers/BaseTransformer.js';
 
-
-@RegisterTransformer({
-    serializeOrder: -100,
-    deserializeOrder: -100,
-})
 export class BigIntTransformer extends BaseTransformer
 {
     

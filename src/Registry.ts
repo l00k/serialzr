@@ -1,13 +1,14 @@
 import { isRestrictedAccessor } from '$/helpers/common.js';
 import type { BaseTransformer } from '$/transformers/BaseTransformer.js';
 import clone from 'clone';
+import { Direction, TransformStage } from './def.js';
 import type {
     AutoGroupEntry,
     ClassConstructor,
     ExposeDscr,
     PropertyDefinition,
     PropertyModifiers,
-    PropTransformers,
+    PropTransformerDscr,
     TargetType,
     TransformerOptions,
     TypeDefinition,
@@ -30,6 +31,11 @@ type OrderedTransformer = {
     transformer : BaseTransformer,
     order : number,
 }
+type OrderedTransformers = {
+    [key in Direction] : {
+        [key in TransformStage] : OrderedTransformer[]
+    }
+}
 
 export class Registry
 {
@@ -46,8 +52,19 @@ export class Registry
     }
     
     
-    protected _serializers : OrderedTransformer[] = [];
-    protected _deserializers : OrderedTransformer[] = [];
+    protected _transformers : OrderedTransformers = {
+        [Direction.Serialize]: {
+            [TransformStage.Before]: [],
+            [TransformStage.After]: [],
+        },
+        [Direction.Deserialize]: {
+            [TransformStage.Before]: [],
+            [TransformStage.After]: [],
+        },
+    };
+    
+    protected _deserializersBefore : OrderedTransformer[] = [];
+    protected _deserializersAfter : OrderedTransformer[] = [];
     
     protected _types : TypeDefinitions = new Map();
     protected _typesMap : Record<string, any> = {};
@@ -116,15 +133,21 @@ export class Registry
     {
         const transformer = new transformerClass();
         
+        const stage = options.serializeOrder < 0
+            ? TransformStage.Before
+            : TransformStage.After
+        ;
+        
         if (options.serializeOrder !== undefined) {
-            this._serializers = [
-                ...this._serializers,
+            this._transformers[Direction.Serialize][stage] = [
+                ...this._transformers[Direction.Serialize][stage],
                 { transformer, order: options.serializeOrder },
             ].sort((a, b) => a.order - b.order);
         }
+        
         if (options.deserializeOrder !== undefined) {
-            this._deserializers = [
-                ...this._deserializers,
+            this._transformers[Direction.Deserialize][stage] = [
+                ...this._transformers[Direction.Deserialize][stage],
                 { transformer, order: options.deserializeOrder },
             ].sort((a, b) => a.order - b.order);
         }
@@ -275,7 +298,7 @@ export class Registry
     public registerPropertyTransformers (
         targetClass : any,
         propKey : PropertyKey,
-        transformers : PropTransformers,
+        transformers : PropTransformerDscr,
     ) : void
     {
         const propDefiniton = this._initPropertyDefinition(targetClass, propKey);
@@ -324,14 +347,12 @@ export class Registry
     }
     
     
-    public getSerializers () : OrderedTransformer[]
+    public getTransformers (
+        direction : Direction,
+        stage : TransformStage,
+    ) : OrderedTransformer[]
     {
-        return this._serializers;
-    }
-    
-    public getDeserializers () : OrderedTransformer[]
-    {
-        return this._deserializers;
+        return this._transformers[direction][stage];
     }
     
     public getAllProperties (

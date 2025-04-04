@@ -22,13 +22,13 @@ prepareSerializerContext('Metadata', () => {
         @Srlz.Modifiers({ objectMerge: true })
         public adnotations = 'unchanged';
         
-        public get getAccessor () { return 2; }
+        public get getAccessor () : number { return 2; }
         
         public set setAccessor (value : number) {}
         
-        public propFunc = function () {}
+        public propFunc = function () : void {}
         
-        public method () {}
+        public method () : void {}
     }
     
     class Admin extends Player {}
@@ -39,13 +39,13 @@ prepareSerializerContext('Metadata', () => {
     it('should not be possible to register second type with the same name', () => {
         registry.registerType(
             User,
-            { name: 'User' }
+            { name: 'User' },
         );
         
         expect(() => {
             registry.registerType(
                 Player,
-                { name: 'User' }
+                { name: 'User' },
             );
         }).to.throw();
     });
@@ -66,7 +66,7 @@ prepareSerializerContext('Metadata', () => {
     it('should return proper property definition for child class', () => {
         const idPropDef = registry.getPropertyDefinition(
             Admin,
-            'id'
+            'id',
         );
         
         expect(idPropDef).to.be.eql({
@@ -80,7 +80,6 @@ prepareSerializerContext('Metadata', () => {
                 { mode: true },
             ],
             modifiers: {},
-            transformers: {},
             type: undefined,
         });
     });

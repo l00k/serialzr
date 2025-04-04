@@ -1,18 +1,39 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { serializer, Srlz } from '$/index.js';
+import type { ClassConstructor, TransformationResult } from '$/index.js';
+import { BaseTransformer, serializer, Srlz } from '$/index.js';
 
 const TypeProp = '@type';
 
 prepareSerializerContext('Deserialize / Transformers', () => {
-    @Srlz.Type('cchild')
-    @Srlz.Transformer<Child>({
-        toClass: (source) => {
-            return [ new Child(source.toUpperCase()), true ];
-        },
-        toPlain: (source) => {
-            return [ source.value.toLowerCase(), true ];
-        }
+    @Srlz.RegisterTransformer({
+        serializeOrder: -100,
+        deserializeOrder: -100,
     })
+    class ChildTransformer extends BaseTransformer
+    {
+        public shouldApply (source : any, type : ClassConstructor<any>) : boolean
+        {
+            return type === Child;
+        }
+        
+        public deserialize (source : any) : TransformationResult
+        {
+            return {
+                output: new Child(source.toUpperCase()),
+                final: true,
+            };
+        }
+        
+        public serialize (source : any) : TransformationResult
+        {
+            return {
+                output: source.value.toLowerCase(),
+                final: true,
+            };
+        }
+    }
+    
+    @Srlz.Type('cchild')
     class Child
     {
         public value : string = '';
@@ -41,12 +62,12 @@ prepareSerializerContext('Deserialize / Transformers', () => {
         public child : Child = new Child('TEXT');
         
         @Srlz.Expose()
-        @Srlz.Transformer<string>({
-            toPlain: (source) => {
-                return [ source.toLowerCase(), true ];
+        @Srlz.Transformer({
+            serialize: (source) => {
+                return { output: source.toLowerCase(), final: true };
             },
-            toClass: (source) => {
-                return [ source.toUpperCase(), true ];
+            deserialize: (source) => {
+                return { output: source.toUpperCase(), final: true };
             },
         })
         public perPropTrans : string = 'TEXT';
@@ -54,7 +75,7 @@ prepareSerializerContext('Deserialize / Transformers', () => {
     }
     
     
-    it('properly transformate', () => {
+    it('properly transform', () => {
         const plain = {
             [TypeProp]: 'centity',
             id: 1,
@@ -65,7 +86,7 @@ prepareSerializerContext('Deserialize / Transformers', () => {
         };
         
         const object = serializer.deserialize(plain, {
-            type: Entity
+            type: Entity,
         });
         
         expect(object).to.deep.equal({
@@ -100,7 +121,7 @@ prepareSerializerContext('Deserialize / Transformers', () => {
         };
         
         const object = serializer.deserialize(plain, {
-            type: Entity
+            type: Entity,
         });
         
         expect(object).to.deep.equal({
@@ -116,7 +137,7 @@ prepareSerializerContext('Deserialize / Transformers', () => {
             public id : number = 1;
             
             @Srlz.Expose()
-            public get computed ()
+            public get computed () : string
             {
                 return 'computed';
             }
@@ -128,11 +149,11 @@ prepareSerializerContext('Deserialize / Transformers', () => {
         };
         
         const object = serializer.deserialize(plain, {
-            type: Entity
+            type: Entity,
         });
         
         expect(object).to.deep.equal({
-            id: 2
+            id: 2,
         });
     });
     
@@ -143,26 +164,23 @@ prepareSerializerContext('Deserialize / Transformers', () => {
             public id : number = 1;
             
             @Srlz.Expose()
-            @Srlz.Transformer({
-                toClass: source => {
-                    return [ source * 2, true ];
-                }
-            })
+            @Srlz.Transformer.Deserialize({ before: (source : any) => ({ output: source * 2, final: true }) })
             public value : number = 5;
         }
         
         const plain = {
             id: 2,
-            value: 10
+            value: 10,
         };
         
         const object = serializer.deserialize(plain, {
-            type: Entity
+            type: Entity,
         });
         
         expect(object).to.deep.equal({
             id: 2,
             value: 20,
         });
-    });
+    })
+    ;
 });

@@ -1,18 +1,39 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { serializer, Srlz } from '$/index.js';
+import type { TransformationResult , ClassConstructor } from '$/index.js';
+import { BaseTransformer , serializer, Srlz } from '$/index.js';
 
 const TypeProp = '@type';
 
 prepareSerializerContext('Serialize / Transformers', () => {
-    @Srlz.Type('#child')
-    @Srlz.Transformer<Child>({
-        toClass: (source) => {
-            return [ new Child(source.toUpperCase()), true ];
-        },
-        toPlain: (source) => {
-            return [ source.value.toLowerCase(), true ];
-        }
+    @Srlz.RegisterTransformer({
+        serializeOrder: -100,
+        deserializeOrder: -100,
     })
+    class ChildTransformer extends BaseTransformer
+    {
+        public shouldApply (source : any, type : ClassConstructor<any>) : boolean
+        {
+            return type === Child;
+        }
+        
+        public deserialize (source : any) : TransformationResult
+        {
+            return {
+                output: new Child(source.toUpperCase()),
+                final: true,
+            };
+        }
+        
+        public serialize (source : any) : TransformationResult
+        {
+            return {
+                output: source.value.toLowerCase(),
+                final: true,
+            };
+        }
+    }
+
+    @Srlz.Type('#child')
     class Child
     {
         public value : string = '';
@@ -44,12 +65,12 @@ prepareSerializerContext('Serialize / Transformers', () => {
         public child : Child = new Child('TEXT');
         
         @Srlz.Expose()
-        @Srlz.Transformer<string>({
-            toPlain: (source) => {
-                return [ source.toLowerCase(), true ];
+        @Srlz.Transformer({
+            serialize: (source) => {
+                return { output: source.toLowerCase(), final: true };
             },
-            toClass: (source) => {
-                return [ source.toUpperCase(), true ];
+            deserialize: (source) => {
+                return { output: source.toUpperCase(), final: true };
             },
         })
         public perPropTrans : string = 'TEXT';
@@ -113,7 +134,7 @@ prepareSerializerContext('Serialize / Transformers', () => {
         const plain = serializer.serialize(object);
         
         expect(plain).to.deep.equal({
-            id: 1
+            id: 1,
         });
     });
     
@@ -126,7 +147,7 @@ prepareSerializerContext('Serialize / Transformers', () => {
             @Srlz.Type(() => Number)
             @Srlz.Expose()
             @Srlz.Transformer({
-                toPlain: source => [ source * 2, true ]
+                serialize: source => ({ output: source * 2, final: true }),
             })
             public get computed () : number
             {
@@ -186,14 +207,14 @@ prepareSerializerContext('Serialize / Transformers', () => {
         const object = new Entity();
         
         expect(
-            serializer.serialize(object, { groups: [ 'group1' ] })
+            serializer.serialize(object, { groups: [ 'group1' ] }),
         ).to.deep.equal({
             id: 1,
             computed: true,
         });
         
         expect(
-            serializer.serialize(object)
+            serializer.serialize(object),
         ).to.deep.equal({
             id: 1,
             computed: false,
@@ -202,7 +223,7 @@ prepareSerializerContext('Serialize / Transformers', () => {
         object.computed = null;
         
         expect(
-            serializer.serialize(object)
+            serializer.serialize(object),
         ).to.deep.equal({
             id: 1,
             computed: null,

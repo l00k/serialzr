@@ -84,10 +84,4 @@ export default tseslint.config(
             '@typescript-eslint/no-unused-expressions': [ 'off' ],
         },
     },
-    // Ignored files
-    {
-        ignores: [
-            'tests/**',
-        ],
-    },
 );

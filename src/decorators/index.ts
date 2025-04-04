@@ -7,3 +7,4 @@ export * from './Id.js';
 export * from './Modifiers.js';
 export * from './RegisterTransformer.js';
 export * from './Type.js';
+export * from './Transformer.js';
