@@ -1,6 +1,6 @@
 {
     "name": "serialzr",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "license": "MIT",
     "repository": {
         "type": "git",
@@ -16,9 +16,7 @@
         "coverage": "c8 mocha --import=tsx",
         "inspect": "mocha --import=tsx --inspect-brk"
     },
-    "dependencies": {
-        "clone": "^2.1.2"
-    },
+    "dependencies": {},
     "devDependencies": {
         "@stylistic/eslint-plugin": "^4.2.0",
         "@tsconfig/node20": "^20.1.4",

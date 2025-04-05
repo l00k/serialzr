@@ -1,6 +1,5 @@
 import { isRestrictedAccessor } from '$/helpers/common.js';
 import type { BaseTransformer } from '$/transformers/BaseTransformer.js';
-import clone from 'clone';
 import { Direction, TransformStage } from './def.js';
 import type {
     AutoGroupEntry,
@@ -172,7 +171,11 @@ export class Registry
             if (parentClasses[0]) {
                 const parentTypeDef = this._types.get(parentClasses[0]);
                 if (parentTypeDef) {
-                    typeDefinition = clone(parentTypeDef);
+                    typeDefinition = {
+                        ...parentTypeDef,
+                        modifiers: { ...parentTypeDef.modifiers },
+                        autoGroups: [ ...parentTypeDef.autoGroups ],
+                    };
                     typeDefinition.name = undefined;
                 }
             }
