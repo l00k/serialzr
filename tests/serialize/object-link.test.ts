@@ -41,4 +41,13 @@ prepareSerializerContext('Serialize / Object Link', () => {
             child: '@/Sample135/5',
         });
     });
+    
+    it('Should reduce to object link', () => {
+        const obj = new Item();
+        obj.id = 5;
+    
+        const plain = serializer.serialize(obj);
+        
+        expect(plain).to.deep.equal('@/Sample135/5');
+    });
 });

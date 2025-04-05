@@ -133,7 +133,7 @@ export class Serializer
             excludeExtraneous: true,
             
             typeProperty: this._typeProperty,
-            idProperty: this._objectLinkProperty,
+            objectLinkProperty: this._objectLinkProperty,
             useObjectLink: this._useObjectLink,
             
             ...options,
@@ -186,9 +186,10 @@ export class Serializer
                 // create context backup
                 const ctx_path = context.path;
                 const ctx_depth = context.depth;
-                const ctx_type = context.type;
                 const ctx_parent = context.parent;
                 const ctx_circular = context.circular;
+                const ctx_type = context.type;
+                const ctx_typeDef = context.typeDef;
                 
                 context.parent = source;
                 context.circular = [ ...ctx_circular, source ];
@@ -209,9 +210,10 @@ export class Serializer
                 // restore context
                 context.path = ctx_path;
                 context.depth = ctx_depth;
-                context.type = ctx_type;
                 context.parent = ctx_parent;
                 context.circular = ctx_circular;
+                context.type = ctx_type;
+                context.typeDef = ctx_typeDef;
                 
                 return array;
             }
@@ -221,11 +223,12 @@ export class Serializer
                 }
                 
                 // create context backup
-                const ctx_type = context.type;
                 const ctx_path = context.path;
                 const ctx_depth = context.depth;
                 const ctx_parent = context.parent;
                 const ctx_circular = context.circular;
+                const ctx_type = context.type;
+                const ctx_typeDef = context.typeDef;
                 
                 context.parent = source;
                 context.circular = [ ...ctx_circular, source ];
@@ -244,11 +247,12 @@ export class Serializer
                 }
                 
                 // restore context
-                context.type = ctx_type;
                 context.path = ctx_path;
                 context.depth = ctx_depth;
                 context.parent = ctx_parent;
                 context.circular = ctx_circular;
+                context.type = ctx_type;
+                context.typeDef = ctx_typeDef;
                 
                 return record;
             }
@@ -392,6 +396,7 @@ export class Serializer
             const ctx_parent = context.parent;
             const ctx_propertyKey = context.propertyKey;
             const ctx_type = context.type;
+            const ctx_typeDef = context.typeDef;
             const ctx_path = context.path;
             const ctx_depth = context.depth;
             const ctx_circular = context.circular;
@@ -465,6 +470,7 @@ export class Serializer
             context.parent = ctx_parent;
             context.propertyKey = ctx_propertyKey;
             context.type = ctx_type;
+            context.typeDef = ctx_typeDef;
             context.path = ctx_path;
             context.depth = ctx_depth;
             context.circular = ctx_circular;
@@ -547,7 +553,7 @@ export class Serializer
             keepInitialValues: true,
             
             typeProperty: this._typeProperty,
-            idProperty: this._objectLinkProperty,
+            objectLinkProperty: this._objectLinkProperty,
             useObjectLink: this._useObjectLink,
             
             ...options,
@@ -615,8 +621,9 @@ export class Serializer
                 
                 // create context backup
                 const ctx_path = context.path;
-                const ctx_type = context.type;
                 const ctx_parent = context.parent;
+                const ctx_type = context.type;
+                const ctx_typeDef = context.typeDef;
                 
                 context.parent = source;
                 
@@ -634,8 +641,9 @@ export class Serializer
                 
                 // restore context
                 context.path = ctx_path;
-                context.type = ctx_type;
                 context.parent = ctx_parent;
+                context.type = ctx_type;
+                context.typeDef = ctx_typeDef;
                 
                 return array;
             }
@@ -645,9 +653,10 @@ export class Serializer
                 }
                 
                 // create context backup
-                const ctx_type = context.type;
                 const ctx_path = context.path;
                 const ctx_parent = context.parent;
+                const ctx_type = context.type;
+                const ctx_typeDef = context.typeDef;
                 
                 context.parent = source;
                 
@@ -664,9 +673,10 @@ export class Serializer
                 }
                 
                 // restore context
-                context.type = ctx_type;
                 context.path = ctx_path;
                 context.parent = ctx_parent;
+                context.type = ctx_type;
+                context.typeDef = ctx_typeDef;
                 
                 return record;
             }
@@ -766,6 +776,7 @@ export class Serializer
         const ctx_parent = context.parent;
         const ctx_propertyKey = context.propertyKey;
         const ctx_type = context.type;
+        const ctx_typeDef = context.typeDef;
         const ctx_path = context.path;
         const ctx_graph = context.graph;
         const ctx_forceExpose = context.forceExpose;
@@ -848,6 +859,7 @@ export class Serializer
         context.parent = ctx_parent;
         context.propertyKey = ctx_propertyKey;
         context.type = ctx_type;
+        context.typeDef = ctx_typeDef;
         context.path = ctx_path;
         context.graph = ctx_graph;
         context.forceExpose = ctx_forceExpose;

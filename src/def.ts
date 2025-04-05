@@ -172,7 +172,7 @@ export namespace SerializationOptions
 {
     export type Base<T> = TypeModifiers & {
         typeProperty? : string,
-        idProperty? : string,
+        objectLinkProperty? : string,
         useObjectLink? : boolean,
         
         groups? : string[],

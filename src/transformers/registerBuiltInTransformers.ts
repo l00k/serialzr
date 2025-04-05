@@ -6,6 +6,7 @@ import { NonObjectTransformer } from './NonObjectTransformer.js';
 import { ObjectLinkTransformer } from './ObjectLinkTransformer.js';
 import { TrivialValueTransformer } from './TrivialValueTransformer.js';
 import { UnknownTypeTransformer } from './UnknownTypeTransformer.js';
+import { ReduceToObjectLinkTransformer } from './ReduceToObjectLinkTransformer.js';
 
 export function registerBuiltInTransformers () : void
 {
@@ -44,5 +45,9 @@ export function registerBuiltInTransformers () : void
     registry.registerTransformers(NonObjectTransformer, {
         serializeOrder: -1,
         deserializeOrder: -1,
+    });
+    
+    registry.registerTransformers(ReduceToObjectLinkTransformer, {
+        serializeOrder: 100,
     });
 }

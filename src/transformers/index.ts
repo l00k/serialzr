@@ -3,6 +3,7 @@ export * from './DateTransformer.js';
 export * from './BigIntTransformer.js';
 export * from './NonObjectTransformer.js';
 export * from './ObjectLinkTransformer.js';
+export * from './ReduceToObjectLinkTransformer.js';
 export * from './BuiltInTypeTransformer.js';
 export * from './UnknownTypeTransformer.js';
 export * from './TrivialValueTransformer.js';
