@@ -86,6 +86,6 @@ export default tseslint.config(
     },
     // Script files
     {
-        ignores: [ 'scripts/**' ],
+        ignores: [ 'etc/**' ],
     },
 );

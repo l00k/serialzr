@@ -13,7 +13,6 @@
     "scripts": {
         "build": "tspc -P tsconfig.build.json",
         "test": "mocha --import=tsx",
-        "test:performance": "node --import=tsx scripts/performance-test.ts",
         "coverage": "c8 mocha --import=tsx",
         "inspect": "mocha --import=tsx --inspect-brk"
     },
@@ -33,13 +32,11 @@
         "chai": "^5.1.1",
         "chai-as-promised": "^8.0.0",
         "chai-subset": "^1.6.0",
-        "class-transformer": "^0.5.1",
         "eslint": "^8.57.1",
         "eslint-plugin-import": "^2.30.0",
         "husky": "^9.1.6",
         "lint-staged": "^15.2.10",
         "mocha": "^10.7.3",
-        "reflect-metadata": "^0.2.2",
         "ts-patch": "^3.2.1",
         "tsx": "^4.19.1",
         "typescript": "5.5.4",

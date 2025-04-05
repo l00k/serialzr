@@ -1,0 +1,24 @@
+{
+    "name": "serialzr-performance",
+    "version": "0.0.1",
+    "license": "MIT",
+    "type": "module",
+    "scripts": {
+        "test": "node --import=tsx ./index.ts"
+    },
+    "dependencies": {
+        "clone": "^2.1.2"
+    },
+    "devDependencies": {
+        "class-transformer": "^0.5.1",
+        "reflect-metadata": "^0.2.2",
+        "tsx": "^4.19.1",
+        "serialzr": "file:../../"
+    },
+    "lint-staged": {
+        "*.{js,jsx,ts,tsx}": [
+            "eslint --fix",
+            "git add"
+        ]
+    }
+}

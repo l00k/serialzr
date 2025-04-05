@@ -1,8 +1,8 @@
-import { serializer, Srlz } from '$/index.js';
+import { serializer, Srlz } from 'serialzr';
 import * as Trans from 'class-transformer';
 import 'reflect-metadata';
 
-const sampleSize = 10_000;
+const sampleSize = 25_000;
 
 @Srlz.Type()
 class Category
@@ -212,9 +212,7 @@ for (let i = 0; i < sampleSize; ++i) {
 }
 const dt1 = (Date.now() - st1) / sampleSize;
 
-// eslint-disable-next-line no-console
 console.log('Srlz');
-// eslint-disable-next-line no-console
 console.log(dt1);
 
 const st2 = Date.now();
@@ -225,9 +223,7 @@ for (let i = 0; i < sampleSize; ++i) {
 }
 const dt2 = (Date.now() - st2) / sampleSize;
 
-// eslint-disable-next-line no-console
 console.log('Class-Transformer');
-// eslint-disable-next-line no-console
 console.log(dt2);
 
 console.log(((dt1 / dt2 - 1) * 100).toFixed(2) + '% slower');

@@ -6,7 +6,8 @@
         "module": "nodenext",
         "moduleResolution": "nodenext",
         "lib": [
-            "esnext"
+            "esnext",
+            "dom"
         ],
 
         "esModuleInterop": true,
@@ -25,10 +26,6 @@
         "isolatedModules": true,
 
         "baseUrl": ".",
-        "paths": {
-            "$/*": ["./src/*"],
-            "#/*": ["./tests/*"]
-        },
 
         "typeRoots": [
             "./node_modules/@types",
@@ -41,7 +38,6 @@
         "outDir": "dist"
     },
     "include": [
-        "./src/**/*.ts",
-        "./tests/**/*.ts"
+        "./**/*.ts"
     ]
 }
