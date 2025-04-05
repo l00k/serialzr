@@ -13,6 +13,7 @@
     "scripts": {
         "build": "tspc -P tsconfig.build.json",
         "test": "mocha --import=tsx",
+        "test:performance": "node --import=tsx scripts/performance-test.ts",
         "coverage": "c8 mocha --import=tsx",
         "inspect": "mocha --import=tsx --inspect-brk"
     },

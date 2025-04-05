@@ -84,4 +84,8 @@ export default tseslint.config(
             '@typescript-eslint/no-unused-expressions': [ 'off' ],
         },
     },
+    // Script files
+    {
+        ignores: [ 'scripts/**' ],
+    },
 );

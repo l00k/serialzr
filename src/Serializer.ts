@@ -183,21 +183,36 @@ export class Serializer
                     return [];
                 }
                 
+                // create context backup
+                const ctx_path = context.path;
+                const ctx_depth = context.depth;
+                const ctx_type = context.type;
+                const ctx_parent = context.parent;
+                const ctx_circular = context.circular;
+                
+                context.parent = source;
+                context.circular = [ ...ctx_circular, source ];
+                context.depth = ctx_depth + 1;
+                
                 const array : any = [];
                 for (const [ idx, itemRaw ] of Object.entries(source)) {
-                    const path = (context.path ? context.path + '.' : '') + idx;
-                    const item = this._serialize<any>(itemRaw, options, {
-                        ...context,
-                        type: { type: context.type.arrayOf },
-                        path,
-                        depth: context.depth + 1,
-                        circular: [ ...context.circular, source ],
-                    });
+                    context.path = (ctx_path ? ctx_path + '.' : '') + idx;
+                    context.type = { type: ctx_type.arrayOf };
+                    
+                    const item = this._serialize(itemRaw, options, context);
                     
                     if (![ null, undefined ].includes(item)) {
                         array.push(item);
                     }
                 }
+                
+                // restore context
+                context.path = ctx_path;
+                context.depth = ctx_depth;
+                context.type = ctx_type;
+                context.parent = ctx_parent;
+                context.circular = ctx_circular;
+                
                 return array;
             }
             else if (context.type.recordOf) {
@@ -205,21 +220,36 @@ export class Serializer
                     return undefined;
                 }
                 
+                // create context backup
+                const ctx_type = context.type;
+                const ctx_path = context.path;
+                const ctx_depth = context.depth;
+                const ctx_parent = context.parent;
+                const ctx_circular = context.circular;
+                
+                context.parent = source;
+                context.circular = [ ...ctx_circular, source ];
+                context.depth = ctx_depth + 1;
+                
                 const record : any = {};
                 for (const [ propKey, itemRaw ] of Object.entries(source)) {
-                    const path = (context.path ? context.path + '.' : '') + propKey;
-                    const item = this._serialize<any>(itemRaw, options, {
-                        ...context,
-                        type: { type: context.type.recordOf },
-                        path: path,
-                        depth: context.depth + 1,
-                        circular: [ ...context.circular, source ],
-                    });
+                    context.path = (context.path ? context.path + '.' : '') + propKey;
+                    context.type = { type: ctx_type.recordOf };
+                    
+                    const item = this._serialize(itemRaw, options, context);
                     
                     if (![ undefined ].includes(item)) {
                         record[propKey] = item;
                     }
                 }
+                
+                // restore context
+                context.type = ctx_type;
+                context.path = ctx_path;
+                context.depth = ctx_depth;
+                context.parent = ctx_parent;
+                context.circular = ctx_circular;
+                
                 return record;
             }
         }
@@ -358,11 +388,30 @@ export class Serializer
                 ;
             }
             
+            // backup context
+            const ctx_parent = context.parent;
+            const ctx_propertyKey = context.propertyKey;
+            const ctx_type = context.type;
+            const ctx_path = context.path;
+            const ctx_depth = context.depth;
+            const ctx_circular = context.circular;
+            const ctx_graph = context.graph;
+            const ctx_forceExpose = context.forceExpose;
+            const ctx_propTransformer = context.propTransformer;
+            
+            context.depth = propDepth;
+            context.parent = source;
+            context.circular = [ ...context.circular, source ];
+            
             for (const propKey of allProps) {
-                const path = (context.path ? context.path + '.' : '') + propKey.toString();
-                
-                const propDef : PropertyDefinition = this._registry
-                    .getPropertyDefinition(type, propKey);
+                // restore context
+                context.graph = ctx_graph;
+                context.forceExpose = ctx_forceExpose;
+            
+                const propDef : PropertyDefinition = this._registry.getPropertyDefinition(
+                    type,
+                    propKey,
+                );
                 
                 // detect non-readable prop
                 const dscr = propDef?.descriptor;
@@ -381,7 +430,6 @@ export class Serializer
                     options,
                     context,
                 );
-                
                 if (!exposeMode) {
                     // drop further processing for this prop
                     continue;
@@ -394,23 +442,17 @@ export class Serializer
                 }
                 else {
                     // prepare child context
-                    const childContext : SerializationContext.ToPlain = {
-                        ...context,
-                        parent: source,
-                        propertyKey: propKey,
-                        type: propDef.type,
-                        path,
-                        depth: propDepth,
-                        circular: [ ...context.circular, source ],
-                        graph: childGraph,
-                        forceExpose: context.forceExpose ?? exposeDeeply,
-                        propTransformer: propDef.transformers?.serialize,
-                    };
+                    context.path = (ctx_path ? ctx_path + '.' : '') + propKey.toString();
+                    context.propertyKey = propKey;
+                    context.type = propDef.type;
+                    context.graph = <any> childGraph;
+                    context.forceExpose = ctx_forceExpose ?? exposeDeeply;
+                    context.propTransformer = propDef.transformers?.serialize;
                     
                     valueToSet = this._serialize(
                         source[propKey],
                         options,
-                        childContext,
+                        context,
                     );
                 }
                 
@@ -418,6 +460,17 @@ export class Serializer
                     plain[propKey] = valueToSet;
                 }
             }
+        
+            // restore context
+            context.parent = ctx_parent;
+            context.propertyKey = ctx_propertyKey;
+            context.type = ctx_type;
+            context.path = ctx_path;
+            context.depth = ctx_depth;
+            context.circular = ctx_circular;
+            context.graph = ctx_graph;
+            context.forceExpose = ctx_forceExpose;
+            context.propTransformer = ctx_propTransformer;
         }
         
         // property transformation after
@@ -560,19 +613,30 @@ export class Serializer
                     return <any>[];
                 }
                 
+                // create context backup
+                const ctx_path = context.path;
+                const ctx_type = context.type;
+                const ctx_parent = context.parent;
+                
+                context.parent = source;
+                
                 const array : any = [];
                 for (const [ idx, itemRaw ] of Object.entries(source)) {
-                    const path = (context.path ? context.path + '.' : '') + idx;
-                    const item = this._deserialize<any>(itemRaw, options, {
-                        ...context,
-                        type: { type: context.type.arrayOf },
-                        path: path,
-                    });
+                    context.path = (ctx_path ? ctx_path + '.' : '') + idx;
+                    context.type = { type: ctx_type.arrayOf };
+                    
+                    const item = this._deserialize(itemRaw, options, context);
                     
                     if (![ null, undefined ].includes(item)) {
                         array.push(item);
                     }
                 }
+                
+                // restore context
+                context.path = ctx_path;
+                context.type = ctx_type;
+                context.parent = ctx_parent;
+                
                 return array;
             }
             else if (context.type.recordOf) {
@@ -580,19 +644,30 @@ export class Serializer
                     return undefined;
                 }
                 
+                // create context backup
+                const ctx_type = context.type;
+                const ctx_path = context.path;
+                const ctx_parent = context.parent;
+                
+                context.parent = source;
+                
                 const record : any = {};
                 for (const [ propKey, itemRaw ] of Object.entries(source)) {
-                    const path = (context.path ? context.path + '.' : '') + propKey;
-                    const item = this._deserialize<any>(itemRaw, options, {
-                        ...context,
-                        type: { type: context.type.recordOf },
-                        path: path,
-                    });
+                    context.path = (context.path ? context.path + '.' : '') + propKey;
+                    context.type = { type: ctx_type.recordOf };
+                    
+                    const item = this._deserialize(itemRaw, options, context);
                     
                     if (![ undefined ].includes(item)) {
                         record[propKey] = item;
                     }
                 }
+                
+                // restore context
+                context.type = ctx_type;
+                context.path = ctx_path;
+                context.parent = ctx_parent;
+                
                 return record;
             }
         }
@@ -687,11 +762,24 @@ export class Serializer
             ;
         }
         
+        // backup context
+        const ctx_parent = context.parent;
+        const ctx_propertyKey = context.propertyKey;
+        const ctx_type = context.type;
+        const ctx_path = context.path;
+        const ctx_graph = context.graph;
+        const ctx_forceExpose = context.forceExpose;
+        const ctx_propTransformer = context.propTransformer;
+        
         for (const propKey of allProps) {
-            const path = (context.path ? context.path + '.' : '') + propKey.toString();
+            // restore context
+            context.graph = ctx_graph;
+            context.forceExpose = ctx_forceExpose;
             
-            const propDef : PropertyDefinition = this._registry
-                .getPropertyDefinition(type, propKey);
+            const propDef : PropertyDefinition = this._registry.getPropertyDefinition(
+                type,
+                propKey,
+            );
             
             // detect non-writable prop
             const dscr = propDef?.descriptor;
@@ -723,21 +811,18 @@ export class Serializer
                 }
                 else {
                     // prepare child context
-                    const childContext : SerializationContext.ToClass = {
-                        ...context,
-                        parent: source,
-                        propertyKey: propKey,
-                        type: propDef.type,
-                        path,
-                        graph: childGraph,
-                        forceExpose: context.forceExpose ?? exposeDeeply,
-                        propTransformer: propDef.transformers?.deserialize,
-                    };
+                    context.parent = source;
+                    context.path = (ctx_path ? ctx_path + '.' : '') + propKey.toString();
+                    context.propertyKey = propKey;
+                    context.type = propDef.type;
+                    context.graph = <any> childGraph;
+                    context.forceExpose = context.forceExpose ?? exposeDeeply;
+                    context.propTransformer = propDef.transformers?.deserialize;
                     
                     targetValue = this._deserialize(
                         source[propKey],
                         options,
-                        childContext,
+                        context,
                     );
                 }
                 
@@ -758,6 +843,15 @@ export class Serializer
                 }
             }
         }
+        
+        // restore context
+        context.parent = ctx_parent;
+        context.propertyKey = ctx_propertyKey;
+        context.type = ctx_type;
+        context.path = ctx_path;
+        context.graph = ctx_graph;
+        context.forceExpose = ctx_forceExpose;
+        context.propTransformer = ctx_propTransformer;
         
         // property transformation after
         if (context.propTransformer?.after) {

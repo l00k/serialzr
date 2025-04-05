@@ -33,12 +33,12 @@ prepareSerializerContext('Deserialize / Graphs', () => {
         public books : Book[] = [
             new Book({ id: 8, name: 'Book 1' }),
             new Book({ id: 9, name: 'Book 2' }),
-        ];
+            ];
         
         @Srlz.Type({ recordOf: () => Book })
         public aliasedBooks : Record<string, Book> = {
             a: new Book({ id: 10, name: 'Book 3' }),
-        };
+            };
         
         public secret : number = 12345;
         
@@ -63,14 +63,14 @@ prepareSerializerContext('Deserialize / Graphs', () => {
                 [TypeProp]: 'book',
                 id: 6,
                 name: 'Bbbb',
-            }
+            },
         ],
         aliasedBooks: {
             c: {
                 [TypeProp]: 'book',
                 id: 7,
                 name: 'Cccc',
-            }
+            },
         },
         secret: 54321,
     };
@@ -78,7 +78,7 @@ prepareSerializerContext('Deserialize / Graphs', () => {
     
     it('graph = true', async() => {
         const object = serializer.deserialize(plain, {
-            graph: true
+            graph: true,
         });
         
         expect(object).to.be.instanceof(Author);
@@ -87,7 +87,7 @@ prepareSerializerContext('Deserialize / Graphs', () => {
     
     it('graph = false', async() => {
         const object = serializer.deserialize(plain, {
-            graph: false
+            graph: false,
         });
         
         expect(object).to.deep.equal(undefined);
@@ -95,9 +95,9 @@ prepareSerializerContext('Deserialize / Graphs', () => {
     
     it('graph = "*"', async() => {
         const object = serializer.deserialize(plain, {
-            graph: '*'
+            graph: '*',
         });
-
+        
         expect(object).to.be.instanceof(Author);
         expect(object).to.deep.equal({
             id: 6,
@@ -119,15 +119,15 @@ prepareSerializerContext('Deserialize / Graphs', () => {
                     id: 4,
                     name: 'Noname',
                 },
-            }
+            },
         });
     });
-
+    
     it('graph = "**"', async() => {
         const object = serializer.deserialize(plain, {
-            graph: '**'
+            graph: '**',
         });
-
+        
         expect(object).to.deep.equal({
             id: 6,
             name: 'Johny Doeee',
@@ -148,8 +148,8 @@ prepareSerializerContext('Deserialize / Graphs', () => {
                     id: 7,
                     name: 'Cccc',
                 },
-            }
+            },
         });
     });
-
+    
 });

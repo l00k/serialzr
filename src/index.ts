@@ -1,4 +1,5 @@
 import { Serializer } from './Serializer.js';
+import { registerBuiltInTransformers } from './transformers/index.js';
 
 export * from './def.js';
 
@@ -11,3 +12,5 @@ export * from './Serializer.js';
 export * from './transformers/index.js';
 
 export const serializer = new Serializer();
+
+registerBuiltInTransformers();
