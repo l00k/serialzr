@@ -1,5 +1,5 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { MetadataStorage, Srlz } from '$/index.js';
+import { Registry, Srlz } from '$/index.js';
 
 
 prepareSerializerContext('Metadata', () => {
@@ -20,43 +20,43 @@ prepareSerializerContext('Metadata', () => {
         
         @Srlz.Expose([ 'adminOnly' ])
         @Srlz.Modifiers({ objectMerge: true })
-        public adnotations = 'unchanged';
+        public annotations = 'unchanged';
         
-        public get getAccessor () { return 2; }
+        public get getAccessor () : number { return 2; }
         
         public set setAccessor (value : number) {}
         
-        public propFunc = function () {}
+        public propFunc = function () : void {}
         
-        public method () {}
+        public method () : void {}
     }
     
     class Admin extends Player {}
     
-    const metadataStorage = MetadataStorage.getSingleton();
+    const registry = Registry.getSingleton();
     
     
     it('should not be possible to register second type with the same name', () => {
-        metadataStorage.registerType(
+        registry.registerType(
             User,
-            { name: 'User' }
+            { name: 'User' },
         );
         
         expect(() => {
-            metadataStorage.registerType(
+            registry.registerType(
                 Player,
-                { name: 'User' }
+                { name: 'User' },
             );
         }).to.throw();
     });
     
     it('should properly return list of properties', () => {
-        const properties = metadataStorage.getAllProperties(Player);
+        const properties = registry.getAllProperties(Player);
         
         expect(Array.from(properties)).to.be.eql([
             'id',
             'name',
-            'adnotations',
+            'annotations',
             'secret',
             'secret2',
             'propFunc',
@@ -64,9 +64,9 @@ prepareSerializerContext('Metadata', () => {
     });
     
     it('should return proper property definition for child class', () => {
-        const idPropDef = metadataStorage.getPropertyDefinition(
+        const idPropDef = registry.getPropertyDefinition(
             Admin,
-            'id'
+            'id',
         );
         
         expect(idPropDef).to.be.eql({
@@ -76,22 +76,21 @@ prepareSerializerContext('Metadata', () => {
                 value: 2,
                 writable: true,
             },
-            exposeDscrs: [
-                { mode: true },
+            exposeRules: [
+                { expose: true },
             ],
             modifiers: {},
-            transformers: {},
-            type: undefined,
+            typeDscr: undefined,
         });
     });
     
     it('should return proper properties list for child class', () => {
-        const properties = metadataStorage.getAllProperties(Admin);
+        const properties = registry.getAllProperties(Admin);
         
         expect(Array.from(properties)).to.be.eql([
             'id',
             'name',
-            'adnotations',
+            'annotations',
             'secret',
             'secret2',
             'propFunc',
@@ -99,16 +98,16 @@ prepareSerializerContext('Metadata', () => {
     });
     
     it('should update cache on metadata cache', () => {
-        metadataStorage.getAllProperties(Player);
+        registry.getAllProperties(Player);
         
         Srlz.Expose()(Player.prototype, 'foo');
         
-        const properties = metadataStorage.getAllProperties(Player);
+        const properties = registry.getAllProperties(Player);
         
         expect(Array.from(properties)).to.be.eql([
             'id',
             'name',
-            'adnotations',
+            'annotations',
             'secret',
             'secret2',
             'propFunc',

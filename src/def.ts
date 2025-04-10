@@ -1,4 +1,13 @@
-export interface ClassConstructor<T>
+import type { Context } from './Context.js';
+
+export type RecursivePartial<T> = T extends object
+    ? { [K in keyof T]? : RecursivePartial<T[K]> }
+    : T extends (infer U)[]
+        ? RecursivePartial<U>[]
+        : T
+    ;
+
+export interface ClassConstructor<T = any>
 {
     new (...args : any[]) : T;
 }
@@ -6,7 +15,8 @@ export interface ClassConstructor<T>
 export type TypedClassDecorator<T> = (target : ClassConstructor<T>) => void;
 
 export type TypeFn = () => any;
-export type TargetType = {
+
+export type TypeDscr = {
     type? : TypeFn,
     arrayOf? : TypeFn,
     recordOf? : TypeFn,
@@ -18,8 +28,8 @@ export type FactoryFn<T> = () => ClassConstructor<T> & {
 
 export enum Direction
 {
-    ToPlain = 'ToPlain',
-    ToClass = 'ToClass',
+    Serialize = 'serialize',
+    Deserialize = 'deserialize',
 }
 
 export enum Strategy
@@ -31,31 +41,36 @@ export enum Strategy
 export type IdType = number | string;
 
 export type ParsedObjectLink = {
-    type : ClassConstructor<any>,
+    type : ClassConstructor,
     id : IdType,
 };
 
-
 // transformers
-export type TransformerFnParams<T = any> = {
-    direction : Direction,
-    type : any,
-    options? : SerializationOptions.Base<T> | any,
-    context? : SerializationContext.Base<T> | any,
+export type TransformerOptions = void;
+
+export type PropTransformerResult<R> = {
+    output : R,
+    final : boolean,
 }
 
-export type TransformationResult<R> = [ R, boolean? ];
+export type PropTransformerFnParams<T = any> = {
+    direction : Direction,
+    context? : Context<T>,
+}
 
-export type TransformerFn<S = any, R = any> = (source : S, params : TransformerFnParams<S>) => TransformationResult<R>;
+export type PropTransformerFn<S = any, R = any> = (
+    source : S,
+    params : PropTransformerFnParams<S>,
+) => PropTransformerResult<R>;
 
-export type TransformerDscr<S = any, R = any> = {
-    before? : TransformerFn<S, R>,
-    after? : TransformerFn<S, R>,
+export type PropTransformerGroup<S = any, R = any> = {
+    before? : PropTransformerFn<S, R>,
+    after? : PropTransformerFn<S, R>,
 };
 
-export type Transformers<T = any> = {
-    toClass? : TransformerDscr<any, T>,
-    toPlain? : TransformerDscr<T, any>,
+export type PropTransformerDscr<T = any> = {
+    serialize? : PropTransformerGroup<T, any>,
+    deserialize? : PropTransformerGroup<any, T>,
 };
 
 
@@ -63,19 +78,17 @@ export type Transformers<T = any> = {
 export type ComputedGetterFnArg = {
     value : any,
     parent : any,
-    params : TransformerFnParams,
+    params : PropTransformerFnParams,
 };
 
 export type ComputedGetterFn = (arg : ComputedGetterFnArg) => any;
 
 
 // exposing properties
-export type ExposeMode = boolean | 'id';
-
-export type ExposeDscr = {
+export type ExposeRule = {
     // modifiers
-    mode? : boolean, // true - expose, false - exclude
-    deeply? : boolean, // expose deeply
+    expose? : boolean, // true - expose, false - exclude
+    forceExpose? : boolean, // force expose deeply
     
     // conditions
     all? : string[], // matched if all groups are present
@@ -93,8 +106,8 @@ export type ExposeOptions = {
 // auto groups
 export type AutoGroupFn<T = any> = (
     object : T | any,
-    ctx : any,
-    context : SerializationContext.Base<T>
+    ctxData : any,
+    context : Context<T>,
 ) => boolean;
 
 export type AutoGroupEntry = {
@@ -104,10 +117,29 @@ export type AutoGroupEntry = {
 
 
 // expose graph
-export type ExposeGraphFlag = true | false | '*' | '**';
+export type ExposeGraphFlag = true // expose
+    | false // exclude
+    | number // expose all properties on N levels
+    | '*' // expose 1 level
+    | '**' // expose all properties deeply
+    ;
+
+export type ExposeGraphModificators = {
+    $expose? : ExposeGraphFlag,
+    $forceExpose? : boolean,
+    $ctxMod? : RecursivePartial<Context>,
+};
+
+export type ExposeGraphNode = ExposeGraphFlag
+    | ExposeGraphModificators
+    ;
+
+export type ExposeGraphProperty = {
+    $default? : ExposeGraphNode,
+};
 
 type _ExposeGraph<T> = T extends object
-    ? { $default? : ExposeGraphFlag } & { [K in keyof T]? : ExposeGraph<T[K]> }
+    ? ExposeGraphProperty & { [K in keyof T]? : ExposeGraph<T[K]> }
     : never
     ;
 
@@ -118,14 +150,14 @@ type _ExposeGraph2<T> = T extends (infer U)[]
         : _ExposeGraph<T>
     ;
 
-export type ExposeGraph<T> = ExposeGraphFlag | _ExposeGraph2<T>;
+export type ExposeGraph<T = any> = ExposeGraphNode | _ExposeGraph2<T>;
 
 
 // modifiers
 export type TypeModifiers = {
     excludePrefixes? : string[],
     excludeExtraneous? : boolean,
-    defaultStrategy? : Strategy,
+    defaultStrategy? : boolean,
     keepInitialValues? : boolean,
 };
 
@@ -133,65 +165,50 @@ export type PropertyModifiers = {
     forceRaw? : boolean,
     objectMerge? : boolean,
     arrayAppend? : boolean,
+    
+    [custom : string] : any,
 };
 
 
 // definitions
-export type TypeDefinition = {
+export type TypeDefinition<T = any> = {
     name? : string,
-    idProperty? : PropertyKey,
+    idProperty? : PropertyKey | keyof T,
     autoGroups? : AutoGroupEntry[],
-    transformers? : Transformers,
     modifiers? : TypeModifiers,
 }
 
 export type PropertyDefinition = {
     descriptor? : PropertyDescriptor,
-    exposeDscrs? : ExposeDscr[],
-    type? : TargetType,
-    transformers? : Transformers,
+    exposeRules? : ExposeRule[],
+    typeDscr? : TypeDscr,
+    transformers? : PropTransformerDscr,
     modifiers? : PropertyModifiers,
 }
 
 
-// transform options
+// serialization options
 export namespace SerializationOptions
 {
-    export type Base<T> = TypeModifiers & {
+    export type Base<T = any> = TypeModifiers & {
+        typeProperty? : string,
+        objectLinkProperty? : string,
+        useObjectLink? : boolean,
+        
         groups? : string[],
         graph? : ExposeGraph<T>,
         ctxData? : Record<any, any>,
+        
+        typeDscr? : TypeDscr,
+        maxDepth? : number,
     }
     
-    export type ToClass<T = any> = Base<T> & {
-        type? : TargetType | ClassConstructor<T> | string,
+    export type Deserialize<T = any> = Base<T> & {
+        type? : ClassConstructor<T> | string,
+        typeDscr? : TypeDscr,
     };
-    export type ToPlain<T = any> = Omit<Base<T>, 'keepInitialValues'> & {
+    export type Serialize<T = any> = Omit<Base<T>, 'keepInitialValues'> & {
         depth? : number,
-        type? : Omit<TargetType, 'type'>,
-    };
-}
-
-
-// transform context
-export namespace SerializationContext
-{
-    export type Base<T> = {
-        type? : TargetType,
-        transformers? : TransformerDscr,
-        propModifiers? : PropertyModifiers,
-        forceExpose? : boolean,
-        groups? : string[],
-        parent? : any,
-        propertyKey? : PropertyKey,
-        path? : string,
-        graph? : ExposeGraph<T>,
-        data? : Record<any, any>,
-    }
-    
-    export type ToClass<T = any> = Base<T> & {};
-    export type ToPlain<T = any> = Base<T> & {
-        depth? : number,
-        circular? : any[],
+        typeDscr? : Omit<TypeDscr, 'type'>,
     };
 }

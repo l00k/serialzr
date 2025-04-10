@@ -1,5 +1,5 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { MetadataStorage, Srlz } from '$/index.js';
+import { Registry, Srlz } from '$/index.js';
 
 
 prepareSerializerContext('Type', () => {
@@ -10,16 +10,16 @@ prepareSerializerContext('Type', () => {
     class ChildClass
         extends ParentClass {}
     
-    const metadataStorage = MetadataStorage.getSingleton();
+    const registry = Registry.getSingleton();
     
     
     it('should register type with proper implict name', () => {
-        const typeDef = metadataStorage.getTypeDefinition(ParentClass);
+        const typeDef = registry.getTypeDefinition(ParentClass);
         expect(typeDef.name).to.be.equal('ParentClass');
     });
     
     it('should register subclass type with proper implict name', () => {
-        const typeDef = metadataStorage.getTypeDefinition(ChildClass);
+        const typeDef = registry.getTypeDefinition(ChildClass);
         expect(typeDef.name).to.be.equal('ParentClass/ChildClass');
     });
 });

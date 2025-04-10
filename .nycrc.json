@@ -1,10 +1,17 @@
 {
-    "extensions": [
-        "ts", "tsx"
-    ],
     "reporter": [
         "text-summary",
         "html",
         "lcov"
+    ],
+    "extensions": [
+        "ts"
+    ],
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "src/transformers/BaseTransformer.ts",
+        "src/helpers/registryDebug.ts"
     ]
 }

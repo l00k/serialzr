@@ -1,14 +1,12 @@
 import { Exception } from './Exception.js';
 
-type AnyFn<T = void> = (...args : any[]) => T;
-
-const cache = new Map<AnyFn, AnyFn[]>();
-const cacheOP = new Map<AnyFn, AnyFn[]>();
+const cache = new Map<any, any[]>();
+const cacheOP = new Map<any, any[]>();
 
 export function getClassesFromChain (
-    Source : AnyFn,
+    Source : any,
     onlyParents : boolean = false,
-) : AnyFn[]
+) : any[]
 {
     if ([ null, undefined ].includes(<any>Source)) {
         return [];
@@ -51,7 +49,7 @@ export function getClassesFromChain (
     }
     
     // return copy
-    const collection : AnyFn[] = onlyParents
+    const collection = onlyParents
         ? cacheOP.get(Source)
         : cache.get(Source)
     ;

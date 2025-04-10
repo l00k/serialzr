@@ -1,40 +1,50 @@
-import { MetadataStorage, serializer } from '$/index.js';
+import { Registry, serializer } from '$/index.js';
+import { registerBuiltInTransformers } from '$/registerBuiltInTransformers.js';
+import { after } from 'mocha';
 
-
-function cleanupMetadataStorage () : MetadataStorage
+function cleanupRegistry () : Registry
 {
-    const backup = MetadataStorage.getSingleton();
+    Registry['__singleton'] = null;
+    const newRegistry = Registry.getSingleton();
     
-    MetadataStorage['__singleton'] = null;
-    serializer['_metadataStorage'] = MetadataStorage.getSingleton();
+    serializer['_registry'] = newRegistry;
+    serializer['_objectLinkProcessor']['_registry'] = newRegistry;
     
-    return backup;
+    registerBuiltInTransformers();
+    
+    return newRegistry;
 }
 
-function restoreMetadataStorage (backup : MetadataStorage) : void
+function restoreRegistry (backup : Registry) : void
 {
-    MetadataStorage['__singleton'] = backup;
-    serializer['_metadataStorage'] = backup;
+    Registry['__singleton'] = backup;
+    serializer['_registry'] = backup;
+    serializer['_objectLinkProcessor']['_registry'] = backup;
 }
 
 export function prepareSerializerContext (
     name : string,
-    fn : Function
+    fn : any,
 ) : void
 {
-    const backupGlobal : MetadataStorage = cleanupMetadataStorage();
-    
     describe(name, () => {
-        fn();
-        
-        const backupLocal : MetadataStorage = cleanupMetadataStorage();
+        const registry = cleanupRegistry();
         
         beforeEach(() => {
-            restoreMetadataStorage(backupLocal);
+            restoreRegistry(registry);
+            
+            serializer['_initiated'] = false;
+            serializer.init({
+                typeProperty: '@type',
+                objectLinkProperty: '@id',
+                useObjectLink: false,
+            });
         });
         
         after(() => {
-            restoreMetadataStorage(backupGlobal);
+            cleanupRegistry();
         });
+        
+        fn();
     });
 }

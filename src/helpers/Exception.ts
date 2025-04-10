@@ -1,24 +1,24 @@
 export class Exception extends Error
 {
     
-    public name : string = 'Exception';
     public code : number;
     
     public constructor (
         message : string,
-        code : number
+        code? : number,
     )
     {
         super(message);
+        this.message = this._getMessage(message, code);
         this.code = code;
     }
     
-    public toString ()
+    public _getMessage (
+        message : string,
+        code? : number,
+    ) : string
     {
-        return '[' + this.code + '] '
-            + this.name + ': '
-            + this.message
-            ;
+        return (code ? '[' + code + '] ' : '') + message;
     }
     
 }

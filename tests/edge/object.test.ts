@@ -1,5 +1,5 @@
 import { prepareSerializerContext } from '#/test-helper.js';
-import { MetadataStorage, Srlz } from '$/index.js';
+import { Registry, Srlz } from '$/index.js';
 
 
 prepareSerializerContext('Object', () => {
@@ -12,16 +12,16 @@ prepareSerializerContext('Object', () => {
     
     it('serialization should not flood Object definition', () => {
         const foo = Object.assign(new Foo(), {
-            bar: { prroop: true }
+            bar: { prroop: true },
         });
         
-        const metadataStorage = MetadataStorage.getSingleton();
+        const registry = Registry.getSingleton();
         expect(
-            [ ...metadataStorage.getAllProperties(Foo) ]
+            [ ...registry.getAllProperties(Foo) ],
         ).to.be.eql([ 'bar' ]);
         
         expect(
-            [ ...metadataStorage.getAllProperties(Object) ]
+            [ ...registry.getAllProperties(Object) ],
         ).to.be.eql([]);
     });
     
