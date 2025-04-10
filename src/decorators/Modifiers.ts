@@ -6,7 +6,7 @@ export function Modifiers (modifiers : TypeModifiers) : ClassDecorator;
 
 export function Modifiers (modifiers : any) : ClassDecorator | PropertyDecorator
 {
-    return function(target : any, propertyKey : PropertyKey, descriptor? : PropertyDescriptor) {
+    return function(target : any, propertyKey? : PropertyKey, descriptor? : PropertyDescriptor) {
         const constructor = target.prototype
             ? target
             : target.constructor

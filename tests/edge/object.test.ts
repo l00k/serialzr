@@ -6,7 +6,7 @@ prepareSerializerContext('Object', () => {
     @Srlz.Type()
     class Foo
     {
-        @Srlz.Expose({ deeply: true })
+        @Srlz.Expose({ forceExpose: true })
         public bar;
     }
     
