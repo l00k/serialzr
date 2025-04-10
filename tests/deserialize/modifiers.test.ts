@@ -20,7 +20,7 @@ prepareSerializerContext('Deserialize / Modifiers', () => {
                 a: Object.assign(new Child(), { id: 5 }),
             };
             
-            @Srlz.Modifiers({})
+            @Srlz.Expose()
             public get test () : number
             {
                 return 5;

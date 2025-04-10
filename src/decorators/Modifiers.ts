@@ -1,16 +1,18 @@
 import { Registry } from '$/Registry.js';
-import type { PropertyModifiers, TypeModifiers } from '../def.js';
+import type { PropertyModifiers, TypedClassDecorator, TypeModifiers } from '../def.js';
 
-export function Modifiers (modifiers : PropertyModifiers) : PropertyDecorator;
-export function Modifiers (modifiers : TypeModifiers) : ClassDecorator;
+function Modifiers<T extends object> (modifiers : TypeModifiers) : TypedClassDecorator<T>;
+function Modifiers (modifiers : PropertyModifiers) : PropertyDecorator;
 
-export function Modifiers (modifiers : any) : ClassDecorator | PropertyDecorator
+function Modifiers<T> (...decorArguments : any[]) : PropertyDecorator | TypedClassDecorator<T>
 {
     return function(target : any, propertyKey? : PropertyKey, descriptor? : PropertyDescriptor) {
         const constructor = target.prototype
             ? target
             : target.constructor
         ;
+        
+        const [ modifiers ] = decorArguments;
         
         const registry = Registry.getSingleton();
         
@@ -37,3 +39,5 @@ export function Modifiers (modifiers : any) : ClassDecorator | PropertyDecorator
         }
     };
 }
+
+export { Modifiers };

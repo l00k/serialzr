@@ -1,11 +1,9 @@
 import type { TypedClassDecorator, TypeDefinition, TypeDscr, TypeFn } from '../def.js';
 import { Registry } from '../Registry.js';
 
-
 function Type<T extends object> (typeDef : Partial<TypeDefinition<T>>) : TypedClassDecorator<T>;
 function Type<T> (typeName? : string) : TypedClassDecorator<T>;
 function Type (typeDscr : TypeDscr | TypeFn) : PropertyDecorator;
-
 
 function Type<T> (...decorArguments : any[]) : PropertyDecorator | TypedClassDecorator<T>
 {
@@ -56,7 +54,5 @@ function Type<T> (...decorArguments : any[]) : PropertyDecorator | TypedClassDec
         }
     };
 }
-
-
 
 export { Type };
