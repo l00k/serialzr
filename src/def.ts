@@ -14,12 +14,12 @@ export interface ClassConstructor<T = any>
 
 export type TypedClassDecorator<T> = (target : ClassConstructor<T>) => void;
 
-export type TypeFn = () => any;
+export type TypeFn<T = any> = () => ClassConstructor<T>;
 
-export type TypeDscr = {
-    type? : TypeFn,
-    arrayOf? : TypeFn,
-    recordOf? : TypeFn,
+export type TypeDscr<T = any> = {
+    type? : TypeFn<T>,
+    arrayOf? : TypeFn<T>,
+    recordOf? : TypeFn<T>,
 };
 
 export type FactoryFn<T> = () => ClassConstructor<T> & {
@@ -191,6 +191,8 @@ export type PropertyDefinition = {
 export namespace SerializationOptions
 {
     export type Base<T = any> = TypeModifiers & {
+        path? : string,
+        
         typeProperty? : string,
         objectLinkProperty? : string,
         useObjectLink? : boolean,

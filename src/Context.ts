@@ -34,6 +34,9 @@ export class Context<T = any>
     {
         this.options = options;
         
+        if ('path' in options) {
+            this.path = options.path;
+        }
         if ('graph' in options) {
             this.graph = options.graph;
         }
